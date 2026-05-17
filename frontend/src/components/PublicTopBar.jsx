@@ -163,9 +163,6 @@ export default function PublicTopBar({
   const [localLanguage, setLocalLanguage] = useState(
     (localStorage.getItem("shopLanguage") || "id").toLowerCase()
   );
-  const [cachedLogo] = useState(
-    localStorage.getItem("appLogo") || "/logofix.png"
-  );
   const [customerUser, setCustomerUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("customerUser"));
@@ -193,7 +190,7 @@ export default function PublicTopBar({
     }
   }, [logo]);
 
-  const displayLogo = logo ? imageUrl(logo) : cachedLogo;
+  const displayLogo = logo ? imageUrl(logo) : "/favicon.png";
   const language = (controlledLanguage || localLanguage || "id").toLowerCase();
   const copy = navCopy[language] || navCopy.id;
 

@@ -6,10 +6,6 @@ import PublicFooter from "../components/PublicFooter";
 import WhatsAppWidget from "../components/WhatsAppWidget";
 import { assetUrl as imageUrl } from "../utils/url";
 
-const fallbackSlides = [
-  { image: "/logofix.png" },
-];
-
 const copy = {
   id: {
     products: "Produk",
@@ -302,12 +298,6 @@ export default function Shop() {
             productsResponse.data.filter((item) => item.isActive)
           );
           setContent(contentResponse.data);
-          if (contentResponse.data.settings?.logo) {
-            localStorage.setItem(
-              "appLogo",
-              imageUrl(contentResponse.data.settings.logo)
-            );
-          }
         }
       } catch {
         if (isMounted) {
@@ -492,14 +482,15 @@ export default function Shop() {
   }, [productGroups, query, serviceFilter, categoryFilter]);
 
   const carouselSlides = useMemo(() => {
-    const bannerSlides = content.banners.map((banner) => ({
+    return content.banners.map((banner) => ({
       image: imageUrl(banner.image),
     }));
-
-    return bannerSlides.length > 0 ? bannerSlides : fallbackSlides;
   }, [content.banners]);
 
-  const activeBanner = carouselSlides[activeSlide % carouselSlides.length];
+  const activeBanner =
+    carouselSlides.length > 0
+      ? carouselSlides[activeSlide % carouselSlides.length]
+      : null;
   const visibleTestimonials = showAllTestimonials
     ? content.testimonials
     : content.testimonials.slice(0, 6);
@@ -520,6 +511,12 @@ export default function Shop() {
     });
   };
 
+  useEffect(() => {
+    if (activeSlide >= carouselSlides.length) {
+      setActiveSlide(0);
+    }
+  }, [activeSlide, carouselSlides.length]);
+
   return (
     <div className="min-h-screen bg-[#0f0d0a] text-white">
       <PublicTopBar
@@ -531,45 +528,57 @@ export default function Shop() {
       />
 
       <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
-        <section className="relative mb-7 overflow-hidden rounded-[28px] border border-[#d5a756]/15 bg-[#17130f]">
-          <div className="relative min-h-[220px] sm:min-h-[320px] lg:min-h-[380px]">
-            <img
-              src={activeBanner.image}
-              alt={activeBanner.title}
-              className="absolute inset-0 h-full w-full object-cover opacity-80"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-black/10" />
+        {(loading || activeBanner) && (
+          <section className="relative mb-7 overflow-hidden rounded-[28px] border border-[#d5a756]/15 bg-[#17130f]">
+            <div className="relative min-h-[220px] sm:min-h-[320px] lg:min-h-[380px]">
+              {loading ? (
+                <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#17130f_8%,#241b13_18%,#17130f_33%)] bg-[length:200%_100%]" />
+              ) : (
+                <>
+                  <img
+                    src={activeBanner.image}
+                    alt="Banner DALPREMIUM"
+                    className="absolute inset-0 h-full w-full object-cover opacity-80"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-black/10" />
 
-            <button
-              type="button"
-              onClick={() => changeSlide(-1)}
-              className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition hover:bg-[#d5a756] hover:text-[#14100b] sm:left-4 sm:h-12 sm:w-12"
-            >
-              <Icon name="chevronLeft" />
-            </button>
-            <button
-              type="button"
-              onClick={() => changeSlide(1)}
-              className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition hover:bg-[#d5a756] hover:text-[#14100b] sm:right-4 sm:h-12 sm:w-12"
-            >
-              <Icon name="chevronRight" />
-            </button>
+                  {carouselSlides.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => changeSlide(-1)}
+                        className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition hover:bg-[#d5a756] hover:text-[#14100b] sm:left-4 sm:h-12 sm:w-12"
+                      >
+                        <Icon name="chevronLeft" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => changeSlide(1)}
+                        className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition hover:bg-[#d5a756] hover:text-[#14100b] sm:right-4 sm:h-12 sm:w-12"
+                      >
+                        <Icon name="chevronRight" />
+                      </button>
+                    </>
+                  )}
 
-            <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2">
-              {carouselSlides.map((slide, index) => (
-                <button
-                  type="button"
-                  key={`${slide.image}-${index}`}
-                  onClick={() => setActiveSlide(index)}
-                  className={`h-2.5 rounded-full transition ${
-                    activeSlide === index ? "w-8 bg-[#d5a756]" : "w-2.5 bg-white/50"
-                  }`}
-                  aria-label={`Slide ${index + 1}`}
-                />
-              ))}
+                  <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2">
+                    {carouselSlides.map((slide, index) => (
+                      <button
+                        type="button"
+                        key={`${slide.image}-${index}`}
+                        onClick={() => setActiveSlide(index)}
+                        className={`h-2.5 rounded-full transition ${
+                          activeSlide === index ? "w-8 bg-[#d5a756]" : "w-2.5 bg-white/50"
+                        }`}
+                        aria-label={`Slide ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         <section id="produk" className="scroll-mt-32">
           <div className="mb-5 text-center">
