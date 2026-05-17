@@ -504,15 +504,17 @@ export default function ContentManagement() {
         <h2 className="text-xl font-black">Logo Website</h2>
         <div className="mt-4 flex flex-wrap items-center gap-4">
           <div className="h-20 w-20 overflow-hidden rounded-full border border-[#d5a756]/20 bg-black">
-            <img
-              src={
-                content.settings?.logo
-                  ? imageUrl(content.settings.logo)
-                  : "/logofix.png"
-              }
-              alt="Logo"
-              className="h-full w-full object-contain p-1"
-            />
+            {content.settings?.logo ? (
+              <img
+                src={imageUrl(content.settings.logo)}
+                alt="Logo"
+                className="h-full w-full object-contain p-1"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-xl font-black text-[#d5a756]">
+                D
+              </div>
+            )}
           </div>
           <FilePicker file={logoFile} onChange={setLogoFile} />
           <button

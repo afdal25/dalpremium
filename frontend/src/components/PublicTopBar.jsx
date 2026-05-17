@@ -215,7 +215,7 @@ export default function PublicTopBar({
     };
   }, [logo]);
 
-  const displayLogo = logo ? imageUrl(logo) : remoteLogo || "/favicon.png";
+  const displayLogo = logo ? imageUrl(logo) : remoteLogo;
   const language = (controlledLanguage || localLanguage || "id").toLowerCase();
   const copy = navCopy[language] || navCopy.id;
 
@@ -337,11 +337,15 @@ export default function PublicTopBar({
           onClick={closeMenus}
           className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#d5a756]/20 bg-black sm:h-14 sm:w-14"
         >
-          <img
-            src={displayLogo}
-            alt="DALPREMIUM"
-            className="h-full w-full object-contain p-1"
-          />
+          {displayLogo ? (
+            <img
+              src={displayLogo}
+              alt="DALPREMIUM"
+              className="h-full w-full object-contain p-1"
+            />
+          ) : (
+            <span className="text-sm font-black text-[#d5a756]">D</span>
+          )}
         </Link>
 
         <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex">

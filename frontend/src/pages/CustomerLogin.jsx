@@ -68,11 +68,7 @@ export default function CustomerLogin() {
             to="/"
             className="mx-auto mb-6 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-[#d5a756]/20 bg-black"
           >
-            <img
-              src="/logofix.png"
-              alt="DALPREMIUM"
-              className="h-full w-full object-contain p-2"
-            />
+            <span className="text-xl font-black text-[#d5a756]">D</span>
           </Link>
 
           <h1 className="text-center text-3xl font-black">

@@ -651,9 +651,20 @@ export default function Products() {
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-x-auto">
         <table className="product-table">
+          <colgroup>
+            <col style={{ width: "360px" }} />
+            <col style={{ width: "150px" }} />
+            <col style={{ width: "130px" }} />
+            <col style={{ width: "130px" }} />
+            <col style={{ width: "135px" }} />
+            <col style={{ width: "130px" }} />
+            <col style={{ width: "130px" }} />
+            <col style={{ width: "140px" }} />
+            <col style={{ width: "190px" }} />
+          </colgroup>
           <thead className="bg-zinc-800">
             <tr>
-              <th className="w-[360px] text-left p-4">Product</th>
+              <th className="text-left p-4">Product</th>
               <th className="text-left p-4">Kategori</th>
               <th className="text-left p-4">Duration</th>
               <th className="text-left p-4">Plan</th>
@@ -760,20 +771,20 @@ export default function Products() {
                     </td>
 
                     <td className="p-4">
-                      <div className="flex gap-2">
+                      <div className="flex min-w-[150px] flex-nowrap gap-2">
                         <button
                           onClick={() => {
                             setEditData(item);
                             setEditImageFile(null);
                           }}
-                          className="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded-lg"
+                          className="rounded-lg bg-yellow-500 px-3 py-2 text-sm font-black text-black hover:bg-yellow-400"
                         >
                           Edit
                         </button>
 
                         <button
                           onClick={() => setDeleteId(item.id)}
-                          className="bg-red-500 hover:bg-red-400 px-4 py-2 rounded-lg"
+                          className="rounded-lg bg-red-500 px-3 py-2 text-sm font-black hover:bg-red-400"
                         >
                           Hapus
                         </button>

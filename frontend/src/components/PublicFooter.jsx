@@ -37,11 +37,15 @@ export default function PublicFooter({ logo, settings, paymentLogos = [] }) {
         <div>
           <Link to="/" className="flex items-center gap-3 font-black text-[#d5a756]">
             <span className="flex h-14 w-14 overflow-hidden rounded-full border border-[#d5a756]/20 bg-black">
-              <img
-                src={logo ? imageUrl(logo) : "/logofix.png"}
-                alt="DALPREMIUM"
-                className="h-full w-full object-contain p-1"
-              />
+              {logo ? (
+                <img
+                  src={imageUrl(logo)}
+                  alt="DALPREMIUM"
+                  className="h-full w-full object-contain p-1"
+                />
+              ) : (
+                <span className="text-sm font-black">D</span>
+              )}
             </span>
             DALPREMIUM
           </Link>

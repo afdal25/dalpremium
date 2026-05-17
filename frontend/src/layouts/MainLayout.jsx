@@ -11,7 +11,7 @@ export default function MainLayout({ children }) {
   const [openSidebar, setOpenSidebar] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [appName, setAppName] = useState("DALPREMIUM");
-  const [appLogo, setAppLogo] = useState("/favicon.png");
+  const [appLogo, setAppLogo] = useState("");
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -28,7 +28,7 @@ export default function MainLayout({ children }) {
 
         const nextLogo = response.data.logo
           ? imageUrl(response.data.logo)
-          : "/favicon.png";
+          : "";
 
         setAppName(response.data.appName || "DALPREMIUM");
         setAppLogo(nextLogo);
@@ -124,11 +124,15 @@ export default function MainLayout({ children }) {
       >
         <div className="mb-10 flex min-h-8 items-center gap-3">
           <span className="flex h-12 w-12 overflow-hidden rounded-full border border-[#d5a756]/20 bg-black">
-            <img
-              src={appLogo}
-              alt={appName}
-              className="h-full w-full object-contain p-1"
-            />
+            {appLogo ? (
+              <img
+                src={appLogo}
+                alt={appName}
+                className="h-full w-full object-contain p-1"
+              />
+            ) : (
+              <span className="text-sm font-black text-[#d5a756]">D</span>
+            )}
           </span>
           <h1 className="truncate text-xl font-black">
             {appName}
