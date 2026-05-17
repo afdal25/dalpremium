@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 
 import ScrollToTop from "./components/ScrollToTop";
+import Shop from "./pages/Shop";
 import {
   ADMIN_DASHBOARD_PATH,
   ADMIN_LOGIN_PATH,
@@ -32,7 +33,6 @@ const ContentManagement = lazy(() =>
   import("./pages/ContentManagement")
 );
 const Orders = lazy(() => import("./pages/Orders"));
-const Shop = lazy(() => import("./pages/Shop"));
 const CustomerLogin = lazy(() => import("./pages/CustomerLogin"));
 const CustomerRegister = lazy(() =>
   import("./pages/CustomerRegister")

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://dalpremium.vercel.app/</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://dalpremium.vercel.app/search-order</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://dalpremium.vercel.app/articles</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://dalpremium.vercel.app/syarat-ketentuan</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://dalpremium.vercel.app/kebijakan-privasi</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://dalpremium.vercel.app/bantuan</loc>
+    <priority>0.5</priority>
+  </url>
+</urlset>

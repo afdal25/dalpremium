@@ -706,6 +706,7 @@ export default function Shop() {
               <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
               <input
                 type="search"
+                aria-label={t.searchService}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={t.searchService}
@@ -713,6 +714,7 @@ export default function Shop() {
               />
             </div>
             <select
+              aria-label={t.allServices}
               value={serviceFilter}
               onChange={(event) => setServiceFilter(event.target.value)}
               className="h-11 rounded-lg border border-white/10 bg-black/30 px-3 outline-none focus:border-[#d5a756]"
@@ -724,6 +726,7 @@ export default function Shop() {
               ))}
             </select>
             <select
+              aria-label={t.allCategories}
               value={categoryFilter}
               onChange={(event) => setCategoryFilter(event.target.value)}
               className="h-11 rounded-lg border border-white/10 bg-black/30 px-3 outline-none focus:border-[#d5a756]"
