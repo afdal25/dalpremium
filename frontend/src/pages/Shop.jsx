@@ -196,9 +196,9 @@ const preloadProductImage = (path) => {
   }
 
   const href = optimizedImageUrl(path, {
-    width: 360,
+    width: 240,
     crop: "limit",
-    quality: "auto:eco",
+    quality: "auto:low",
   });
 
   if (!href || document.querySelector(`link[href="${href}"]`)) {
@@ -209,9 +209,9 @@ const preloadProductImage = (path) => {
   link.rel = "preload";
   link.as = "image";
   link.href = href;
-  link.imageSrcset = imageSrcSet(path, [240, 320, 360], {
+  link.imageSrcset = imageSrcSet(path, [160, 240, 320], {
     crop: "limit",
-    quality: "auto:eco",
+    quality: "auto:low",
   });
   link.imageSizes =
     "(max-width: 640px) 78vw, (max-width: 1024px) 45vw, 25vw";
@@ -840,18 +840,20 @@ export default function Shop() {
                       {group.image ? (
                         <img
                           src={optimizedImageUrl(group.image, {
-                            width: prioritizeImage ? 360 : 480,
+                            width: prioritizeImage ? 240 : 420,
                             crop: "limit",
-                            quality: "auto:eco",
+                            quality: prioritizeImage ? "auto:low" : "auto:eco",
                           })}
                           srcSet={imageSrcSet(
                             group.image,
                             prioritizeImage
-                              ? [240, 320, 360]
-                              : [240, 320, 480],
+                              ? [160, 240, 320]
+                              : [220, 320, 420],
                             {
                               crop: "limit",
-                              quality: "auto:eco",
+                              quality: prioritizeImage
+                                ? "auto:low"
+                                : "auto:eco",
                             }
                           )}
                           sizes="(max-width: 640px) 78vw, (max-width: 1024px) 45vw, 25vw"

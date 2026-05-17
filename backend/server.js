@@ -4127,8 +4127,22 @@ const buildProductsWithStock = async (products) =>
     }))
   );
 
+const SHOP_RESPONSE_CACHE_TTL = 1000 * 20;
+let shopResponseCache = {
+  expiresAt: 0,
+  payload: null,
+};
+
 app.get("/api/shop", async (req, res) => {
   try {
+    if (
+      shopResponseCache.payload &&
+      shopResponseCache.expiresAt > Date.now()
+    ) {
+      res.set("Cache-Control", "public, max-age=20, stale-while-revalidate=60");
+      return res.json(shopResponseCache.payload);
+    }
+
     const [
       settings,
       banners,
@@ -4228,8 +4242,7 @@ app.get("/api/shop", async (req, res) => {
 
     const productsWithStock = await buildProductsWithStock(products);
 
-    res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
-    res.json({
+    const payload = {
       products: productsWithStock,
       content: {
         settings: settings
@@ -4253,7 +4266,15 @@ app.get("/api/shop", async (req, res) => {
         faqs,
         footerPaymentLogos,
       },
-    });
+    };
+
+    shopResponseCache = {
+      expiresAt: Date.now() + SHOP_RESPONSE_CACHE_TTL,
+      payload,
+    };
+
+    res.set("Cache-Control", "public, max-age=20, stale-while-revalidate=60");
+    res.json(payload);
   } catch (error) {
     sendServerError(res, error);
   }
