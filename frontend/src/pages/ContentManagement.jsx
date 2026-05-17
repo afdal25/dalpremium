@@ -3,7 +3,11 @@ import toast from "react-hot-toast";
 import api from "../services/api";
 import FilePicker from "../components/FilePicker";
 import { assetUrl as imageUrl } from "../utils/url";
-import { getCachedLogo, setCachedLogo } from "../utils/branding";
+import {
+  clearCachedLogo,
+  getCachedLogo,
+  setCachedLogo,
+} from "../utils/branding";
 
 const legalPages = [
   {
@@ -36,7 +40,7 @@ const buildHelpForm = (settings = {}) => ({
 });
 
 export default function ContentManagement() {
-  const cachedLogo = getCachedLogo();
+  const [cachedLogo, setCachedLogoPreview] = useState(getCachedLogo);
   const [content, setContent] = useState({
     settings: null,
     banners: [],
@@ -100,10 +104,20 @@ export default function ContentManagement() {
     footerOperationalHours: "",
   });
 
+  const syncLogoCache = (settings = {}) => {
+    if (settings?.logo) {
+      setCachedLogoPreview(setCachedLogo(imageUrl(settings.logo)));
+      return;
+    }
+
+    setCachedLogoPreview(clearCachedLogo());
+  };
+
   const loadContent = async () => {
     const response = await api.get("/content/admin");
     setContent(response.data);
     setHelpForm(buildHelpForm(response.data.settings));
+    syncLogoCache(response.data.settings);
   };
 
   useEffect(() => {
@@ -116,6 +130,7 @@ export default function ContentManagement() {
         if (isMounted) {
           setContent(response.data);
           setHelpForm(buildHelpForm(response.data.settings));
+          syncLogoCache(response.data.settings);
         }
       } catch {
         toast.error("Gagal memuat content");
@@ -174,7 +189,9 @@ export default function ContentManagement() {
       formData.append("logo", logoFile);
       const response = await api.put("/settings/logo", formData);
       if (response.data.settings?.logo) {
-        setCachedLogo(imageUrl(response.data.settings.logo));
+        setCachedLogoPreview(
+          setCachedLogo(imageUrl(response.data.settings.logo))
+        );
       }
       setLogoFile(null);
       toast.success("Logo berhasil diperbarui");
@@ -183,6 +200,27 @@ export default function ContentManagement() {
       toast.error(
         error.response?.data?.message ||
           "Gagal upload logo"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteLogo = async () => {
+    if (!confirm("Hapus logo website?")) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await api.delete("/settings/logo");
+      setLogoFile(null);
+      setCachedLogoPreview(clearCachedLogo());
+      toast.success("Logo berhasil dihapus");
+      loadContent();
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Gagal menghapus logo"
       );
     } finally {
       setLoading(false);
@@ -534,6 +572,16 @@ export default function ContentManagement() {
           >
             Simpan Logo
           </button>
+          {(content.settings?.logo || cachedLogo) && (
+            <button
+              type="button"
+              onClick={deleteLogo}
+              disabled={loading}
+              className="rounded-lg border border-red-500/50 px-5 py-3 font-black text-red-200 disabled:opacity-60"
+            >
+              Hapus Logo
+            </button>
+          )}
         </div>
       </section>
 

@@ -3159,6 +3159,41 @@ app.put(
   }
 );
 
+app.delete(
+  "/api/settings/logo",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res) => {
+    try {
+      let settings = await prisma.setting.findFirst();
+
+      if (!settings) {
+        settings = await prisma.setting.create({
+          data: {},
+        });
+      }
+
+      const updatedSettings = await prisma.setting.update({
+        where: {
+          id: settings.id,
+        },
+        data: {
+          logo: null,
+        },
+      });
+
+      await createAuditLog("Menghapus logo website", req.user);
+
+      res.json({
+        message: "Logo berhasil dihapus",
+        settings: updatedSettings,
+      });
+    } catch (error) {
+      sendServerError(res, error);
+    }
+  }
+);
+
 app.put(
   "/api/settings/footer-payment-image",
   authMiddleware,

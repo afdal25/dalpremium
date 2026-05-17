@@ -22,3 +22,8 @@ export const setCachedLogo = (value) => {
   localStorage.setItem(APP_LOGO_CACHE_KEY, value);
   return value;
 };
+
+export const clearCachedLogo = () => {
+  localStorage.removeItem(APP_LOGO_CACHE_KEY);
+  return "";
+};
