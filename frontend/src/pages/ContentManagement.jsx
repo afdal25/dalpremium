@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import api from "../services/api";
 import FilePicker from "../components/FilePicker";
 import { assetUrl as imageUrl } from "../utils/url";
+import { getCachedLogo, setCachedLogo } from "../utils/branding";
 
 const legalPages = [
   {
@@ -35,6 +36,7 @@ const buildHelpForm = (settings = {}) => ({
 });
 
 export default function ContentManagement() {
+  const cachedLogo = getCachedLogo();
   const [content, setContent] = useState({
     settings: null,
     banners: [],
@@ -171,6 +173,9 @@ export default function ContentManagement() {
       const formData = new FormData();
       formData.append("logo", logoFile);
       const response = await api.put("/settings/logo", formData);
+      if (response.data.settings?.logo) {
+        setCachedLogo(imageUrl(response.data.settings.logo));
+      }
       setLogoFile(null);
       toast.success("Logo berhasil diperbarui");
       loadContent();
@@ -504,9 +509,13 @@ export default function ContentManagement() {
         <h2 className="text-xl font-black">Logo Website</h2>
         <div className="mt-4 flex flex-wrap items-center gap-4">
           <div className="h-20 w-20 overflow-hidden rounded-full border border-[#d5a756]/20 bg-black">
-            {content.settings?.logo ? (
+            {content.settings?.logo || cachedLogo ? (
               <img
-                src={imageUrl(content.settings.logo)}
+                src={
+                  content.settings?.logo
+                    ? imageUrl(content.settings.logo)
+                    : cachedLogo
+                }
                 alt="Logo"
                 className="h-full w-full object-contain p-1"
               />

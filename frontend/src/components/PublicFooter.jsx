@@ -2,9 +2,11 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import { assetUrl as imageUrl } from "../utils/url";
+import { getCachedLogo } from "../utils/branding";
 
 export default function PublicFooter({ logo, settings, paymentLogos = [] }) {
   const [loadedPaymentLogos, setLoadedPaymentLogos] = useState([]);
+  const displayLogo = logo ? imageUrl(logo) : getCachedLogo();
   const description =
     settings?.footerDescription ||
     "Langganan aplikasi premium murah, aman, cepat, dan terpercaya.";
@@ -37,9 +39,9 @@ export default function PublicFooter({ logo, settings, paymentLogos = [] }) {
         <div>
           <Link to="/" className="flex items-center gap-3 font-black text-[#d5a756]">
             <span className="flex h-14 w-14 overflow-hidden rounded-full border border-[#d5a756]/20 bg-black">
-              {logo ? (
+              {displayLogo ? (
                 <img
-                  src={imageUrl(logo)}
+                  src={displayLogo}
                   alt="DALPREMIUM"
                   className="h-full w-full object-contain p-1"
                 />

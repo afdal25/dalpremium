@@ -7,6 +7,7 @@ import {
 } from "../config/routes";
 import { assetUrl as imageUrl } from "../utils/url";
 import api from "../services/api";
+import { getCachedLogo, setCachedLogo } from "../utils/branding";
 
 const navItems = [
   { label: "Produk", key: "products", href: "/#produk", icon: "bag" },
@@ -172,7 +173,7 @@ export default function PublicTopBar({
   const [localLanguage, setLocalLanguage] = useState(
     (localStorage.getItem("shopLanguage") || "id").toLowerCase()
   );
-  const [remoteLogo, setRemoteLogo] = useState("");
+  const [remoteLogo, setRemoteLogo] = useState(getCachedLogo);
   const [customerUser, setCustomerUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("customerUser"));
@@ -205,7 +206,7 @@ export default function PublicTopBar({
       .get("/content")
       .then((response) => {
         if (isMounted && response.data.settings?.logo) {
-          setRemoteLogo(imageUrl(response.data.settings.logo));
+          setRemoteLogo(setCachedLogo(imageUrl(response.data.settings.logo)));
         }
       })
       .catch(() => {});

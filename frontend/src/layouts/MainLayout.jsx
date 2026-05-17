@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import api from "../services/api";
 import { ADMIN_LOGIN_PATH } from "../config/routes";
 import { assetUrl as imageUrl } from "../utils/url";
+import { getCachedLogo, setCachedLogo } from "../utils/branding";
 
 export default function MainLayout({ children }) {
   const location = useLocation();
@@ -11,7 +12,7 @@ export default function MainLayout({ children }) {
   const [openSidebar, setOpenSidebar] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [appName, setAppName] = useState("DALPREMIUM");
-  const [appLogo, setAppLogo] = useState("");
+  const [appLogo, setAppLogo] = useState(getCachedLogo);
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -31,7 +32,7 @@ export default function MainLayout({ children }) {
           : "";
 
         setAppName(response.data.appName || "DALPREMIUM");
-        setAppLogo(nextLogo);
+        setAppLogo(nextLogo ? setCachedLogo(nextLogo) : "");
       } catch {
         console.log("Settings tidak ditemukan");
       }
