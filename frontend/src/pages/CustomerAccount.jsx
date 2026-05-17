@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import api from "../services/api";
 import PublicTopBar from "../components/PublicTopBar";
 import { assetUrl as imageUrl } from "../utils/url";
 import FilePicker from "../components/FilePicker";
+import {
+  exportRowsToPdf,
+  exportRowsToXlsx,
+} from "../utils/exportFiles";
 
 const tabs = [
   "Dashboard",
@@ -228,34 +229,27 @@ export default function CustomerAccount() {
     URL.revokeObjectURL(url);
   };
 
-  const exportXls = () => {
-    const worksheet = XLSX.utils.json_to_sheet(tableRows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(
-      workbook,
-      worksheet,
+  const exportXls = async () => {
+    await exportRowsToXlsx(
+      tableRows,
+      "riwayat-transaksi.xlsx",
       "Transaksi"
     );
-    XLSX.writeFile(workbook, "riwayat-transaksi.xlsx");
   };
 
-  const exportPdf = () => {
-    const doc = new jsPDF();
-    doc.text("Riwayat Transaksi", 14, 16);
-    autoTable(doc, {
-      startY: 22,
-      head: [
-        [
-          "Invoice",
-          "Tanggal",
-          "Produk",
-          "Durasi",
-          "Plan",
-          "Status",
-          "Total",
-        ],
+  const exportPdf = async () => {
+    await exportRowsToPdf({
+      title: "Riwayat Transaksi",
+      headers: [
+        "Invoice",
+        "Tanggal",
+        "Produk",
+        "Durasi",
+        "Plan",
+        "Status",
+        "Total",
       ],
-      body: tableRows.map((row) => [
+      rows: tableRows.map((row) => [
         row.invoice,
         row.tanggal,
         row.produk,
@@ -264,8 +258,8 @@ export default function CustomerAccount() {
         row.status,
         formatRupiah(row.total),
       ]),
+      filename: "riwayat-transaksi.pdf",
     });
-    doc.save("riwayat-transaksi.pdf");
   };
 
   const saveProfile = async () => {

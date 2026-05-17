@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
 import api from "../services/api";
+import {
+  exportRowsToCsv,
+  exportRowsToPdf,
+  exportRowsToXlsx,
+} from "../utils/exportFiles";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -142,38 +144,24 @@ export default function Orders() {
   }));
 
   const exportCsv = () => {
-    const worksheet = XLSX.utils.json_to_sheet(exportRows);
-    const csv = XLSX.utils.sheet_to_csv(worksheet);
-    const blob = new Blob([csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "orders.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+    exportRowsToCsv(exportRows, "orders.csv");
   };
 
-  const exportXls = () => {
-    const worksheet = XLSX.utils.json_to_sheet(exportRows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
-    XLSX.writeFile(workbook, "orders.xlsx");
+  const exportXls = async () => {
+    await exportRowsToXlsx(exportRows, "orders.xlsx", "Orders");
   };
 
-  const exportPdf = () => {
-    const document = new jsPDF({ orientation: "landscape" });
-    document.text("Orders", 14, 14);
-    autoTable(document, {
-      startY: 20,
-      head: [Object.keys(exportRows[0] || { Invoice: "" })],
-      body: exportRows.map((row) => Object.values(row)),
+  const exportPdf = async () => {
+    await exportRowsToPdf({
+      title: "Orders",
+      headers: Object.keys(exportRows[0] || { Invoice: "" }),
+      rows: exportRows.map((row) => Object.values(row)),
+      filename: "orders.pdf",
+      orientation: "landscape",
       styles: {
         fontSize: 8,
       },
     });
-    document.save("orders.pdf");
   };
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);

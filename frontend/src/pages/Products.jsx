@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import api from "../services/api";
 import FilePicker from "../components/FilePicker";
 import { assetUrl as imageUrl } from "../utils/url";
+import {
+  exportRowsToCsv,
+  exportRowsToPdf,
+  exportRowsToXlsx,
+} from "../utils/exportFiles";
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -239,8 +241,8 @@ export default function Products() {
     currentPage * itemsPerPage
   );
 
-  const exportExcel = () => {
-    const data = filteredProducts.map((item) => ({
+  const getExportRows = () =>
+    filteredProducts.map((item) => ({
       Name: item.name,
       Category: item.category?.name || "-",
       Duration: item.duration || "-",
@@ -251,24 +253,16 @@ export default function Products() {
       Description: item.description || "-",
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
-    XLSX.writeFile(workbook, "products.xlsx");
-
+  const exportExcel = async () => {
+    await exportRowsToXlsx(getExportRows(), "products.xlsx", "Products");
     toast.success("Excel berhasil di-export");
   };
 
-  const exportPDF = () => {
-    const doc = new jsPDF();
-
-    doc.text("Laporan Products", 14, 15);
-
-    autoTable(doc, {
-      startY: 25,
-      head: [["Name", "Category", "Duration", "Plan", "Price", "Type", "Status"]],
-      body: filteredProducts.map((item) => [
+  const exportPDF = async () => {
+    await exportRowsToPdf({
+      title: "Laporan Products",
+      headers: ["Name", "Category", "Duration", "Plan", "Price", "Type", "Status"],
+      rows: filteredProducts.map((item) => [
         item.name,
         item.category?.name || "-",
         item.duration || "-",
@@ -277,38 +271,13 @@ export default function Products() {
         item.deliveryType,
         item.isActive ? "ACTIVE" : "INACTIVE",
       ]),
+      filename: "products.pdf",
     });
-
-    doc.save("products.pdf");
-
     toast.success("PDF berhasil di-export");
   };
 
   const exportCSV = () => {
-    const header = "Name,Category,Duration,Plan,Price,Type,Status,Description\n";
-
-    const rows = filteredProducts
-      .map((item) => {
-        return `"${item.name}","${item.category?.name || "-"}","${item.duration || "-"}","${item.plan || "-"}",${item.price},"${item.deliveryType}","${
-          item.isActive ? "ACTIVE" : "INACTIVE"
-        }","${item.description || "-"}"`;
-      })
-      .join("\n");
-
-    const blob = new Blob([header + rows], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.setAttribute("download", "products.csv");
-
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
+    exportRowsToCsv(getExportRows(), "products.csv");
     toast.success("CSV berhasil di-export");
   };
 

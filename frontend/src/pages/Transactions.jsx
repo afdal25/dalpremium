@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 import api from "../services/api";
+import {
+  exportRowsToPdf,
+  exportRowsToXlsx,
+} from "../utils/exportFiles";
 
 export default function Transactions() {
   const [transactions, setTransactions] =
@@ -292,7 +293,7 @@ const fetchSettings = async () => {
   }
 };
 
-const exportExcel = () => {
+const exportExcel = async () => {
   const data = transactions.map((item) => ({
     Type: item.type,
     Amount: item.amount,
@@ -300,38 +301,22 @@ const exportExcel = () => {
     Date: new Date(item.createdAt).toLocaleDateString(),
   }));
 
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-
-  XLSX.utils.book_append_sheet(
-    workbook,
-    worksheet,
-    "Transactions"
-  );
-
-  XLSX.writeFile(workbook, "transactions.xlsx");
-
+  await exportRowsToXlsx(data, "transactions.xlsx", "Transactions");
   toast.success("Excel berhasil di-export");
 };
 
-const exportPDF = () => {
-  const doc = new jsPDF();
-
-  doc.text("Laporan Transaksi", 14, 15);
-
-  autoTable(doc, {
-    startY: 25,
-    head: [["Type", "Amount", "Description", "Date"]],
-    body: transactions.map((item) => [
+const exportPDF = async () => {
+  await exportRowsToPdf({
+    title: "Laporan Transaksi",
+    headers: ["Type", "Amount", "Description", "Date"],
+    rows: transactions.map((item) => [
       item.type,
       `${currency} ${item.amount.toLocaleString()}`,
       item.description,
       new Date(item.createdAt).toLocaleDateString(),
     ]),
+    filename: "transactions.pdf",
   });
-
-  doc.save("transactions.pdf");
-
   toast.success("PDF berhasil di-export");
 };
 

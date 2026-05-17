@@ -1,45 +1,73 @@
+import { lazy, Suspense } from "react";
 import {
   BrowserRouter,
-  Routes,
-  Route,
   Navigate,
+  Route,
+  Routes,
 } from "react-router-dom";
 
-import MainLayout from "./layouts/MainLayout";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Users from "./pages/Users";
-import AuditLogs from "./pages/AuditLogs";
-import Settings from "./pages/Settings";
-import MyAccount from "./pages/MyAccount";
-import Dashboard from "./pages/Dashboard";
-import EmailAccounts from "./pages/EmailAccounts";
-import Transactions from "./pages/Transactions";
-import Products from "./pages/Products";
-import ContentManagement from "./pages/ContentManagement";
-import Orders from "./pages/Orders";
-import Shop from "./pages/Shop";
-import CustomerLogin from "./pages/CustomerLogin";
-import CustomerRegister from "./pages/CustomerRegister";
-import CustomerForgotPassword from "./pages/CustomerForgotPassword";
-import CustomerAccount from "./pages/CustomerAccount";
-import Checkout from "./pages/Checkout";
-import Payment from "./pages/Payment";
-import OrderStatus from "./pages/OrderStatus";
-import SearchOrder from "./pages/SearchOrder";
-import Articles from "./pages/Articles";
-import ArticleDetail from "./pages/ArticleDetail";
-import LegalPage from "./pages/LegalPage";
 import ScrollToTop from "./components/ScrollToTop";
 import {
   ADMIN_DASHBOARD_PATH,
   ADMIN_LOGIN_PATH,
   ADMIN_REGISTER_PATH,
-  CUSTOMER_LOGIN_PATH,
-  CUSTOMER_FORGOT_PASSWORD_PATH,
   CUSTOMER_ACCOUNT_PATH,
+  CUSTOMER_FORGOT_PASSWORD_PATH,
+  CUSTOMER_LOGIN_PATH,
   CUSTOMER_REGISTER_PATH,
 } from "./config/routes";
+
+const MainLayout = lazy(() => import("./layouts/MainLayout"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const Users = lazy(() => import("./pages/Users"));
+const AuditLogs = lazy(() => import("./pages/AuditLogs"));
+const Settings = lazy(() => import("./pages/Settings"));
+const MyAccount = lazy(() => import("./pages/MyAccount"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const EmailAccounts = lazy(() => import("./pages/EmailAccounts"));
+const Transactions = lazy(() => import("./pages/Transactions"));
+const Products = lazy(() => import("./pages/Products"));
+const ContentManagement = lazy(() =>
+  import("./pages/ContentManagement")
+);
+const Orders = lazy(() => import("./pages/Orders"));
+const Shop = lazy(() => import("./pages/Shop"));
+const CustomerLogin = lazy(() => import("./pages/CustomerLogin"));
+const CustomerRegister = lazy(() =>
+  import("./pages/CustomerRegister")
+);
+const CustomerForgotPassword = lazy(() =>
+  import("./pages/CustomerForgotPassword")
+);
+const CustomerAccount = lazy(() =>
+  import("./pages/CustomerAccount")
+);
+const Checkout = lazy(() => import("./pages/Checkout"));
+const Payment = lazy(() => import("./pages/Payment"));
+const OrderStatus = lazy(() => import("./pages/OrderStatus"));
+const SearchOrder = lazy(() => import("./pages/SearchOrder"));
+const Articles = lazy(() => import("./pages/Articles"));
+const ArticleDetail = lazy(() => import("./pages/ArticleDetail"));
+const LegalPage = lazy(() => import("./pages/LegalPage"));
+
+function PageLoader() {
+  return (
+    <div className="min-h-screen bg-[#070604] px-4 py-10 text-white">
+      <div className="mx-auto flex min-h-[50vh] max-w-6xl items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#d5a756]/30 border-t-[#d5a756]" />
+      </div>
+    </div>
+  );
+}
+
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user"));
+  } catch {
+    return null;
+  }
+}
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -52,9 +80,7 @@ function ProtectedRoute({ children }) {
 }
 
 function AdminRoute({ children }) {
-  const user = JSON.parse(
-    localStorage.getItem("user")
-  );
+  const user = getStoredUser();
 
   if (user?.role !== "ADMIN") {
     return <Navigate to={ADMIN_DASHBOARD_PATH} replace />;
@@ -63,222 +89,143 @@ function AdminRoute({ children }) {
   return children;
 }
 
+function AdminPage({ children, adminOnly = false }) {
+  const page = <MainLayout>{children}</MainLayout>;
+
+  return (
+    <ProtectedRoute>
+      {adminOnly ? <AdminRoute>{page}</AdminRoute> : page}
+    </ProtectedRoute>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <Routes>
-        <Route
-          path={ADMIN_LOGIN_PATH}
-          element={<Login />}
-        />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Shop />} />
+          <Route path="/shop" element={<Shop />} />
 
-        <Route
-          path={ADMIN_REGISTER_PATH}
-          element={<Register />}
-        />
+          <Route path={ADMIN_LOGIN_PATH} element={<Login />} />
+          <Route
+            path={ADMIN_REGISTER_PATH}
+            element={<Register />}
+          />
 
-        <Route
-          path="/"
-          element={<Shop />}
-        />
+          <Route
+            path={CUSTOMER_LOGIN_PATH}
+            element={<CustomerLogin />}
+          />
+          <Route
+            path={CUSTOMER_REGISTER_PATH}
+            element={<CustomerRegister />}
+          />
+          <Route
+            path={CUSTOMER_FORGOT_PASSWORD_PATH}
+            element={<CustomerForgotPassword />}
+          />
+          <Route
+            path={CUSTOMER_ACCOUNT_PATH}
+            element={<CustomerAccount />}
+          />
 
-        <Route
-          path={CUSTOMER_LOGIN_PATH}
-          element={<CustomerLogin />}
-        />
-
-        <Route
-          path={CUSTOMER_REGISTER_PATH}
-          element={<CustomerRegister />}
-        />
-
-        <Route
-          path={CUSTOMER_FORGOT_PASSWORD_PATH}
-          element={<CustomerForgotPassword />}
-        />
-
-        <Route
-          path={CUSTOMER_ACCOUNT_PATH}
-          element={<CustomerAccount />}
-        />
-
-        <Route
-          path={ADMIN_DASHBOARD_PATH}
-          element={
-            <ProtectedRoute>
-              <MainLayout>
+          <Route
+            path={ADMIN_DASHBOARD_PATH}
+            element={
+              <AdminPage>
                 <Dashboard />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/emails"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
+              </AdminPage>
+            }
+          />
+          <Route
+            path="/emails"
+            element={
+              <AdminPage>
                 <EmailAccounts />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/transactions"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
+              </AdminPage>
+            }
+          />
+          <Route
+            path="/transactions"
+            element={
+              <AdminPage>
                 <Transactions />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
+              </AdminPage>
+            }
+          />
+          <Route
+            path="/my-account"
+            element={
+              <AdminPage>
+                <MyAccount />
+              </AdminPage>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <AdminPage adminOnly>
+                <Users />
+              </AdminPage>
+            }
+          />
+          <Route
+            path="/audit-logs"
+            element={
+              <AdminPage adminOnly>
+                <AuditLogs />
+              </AdminPage>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <AdminPage adminOnly>
+                <Settings />
+              </AdminPage>
+            }
+          />
+          <Route
+            path="/products"
+            element={
+              <AdminPage adminOnly>
+                <Products />
+              </AdminPage>
+            }
+          />
+          <Route
+            path="/content"
+            element={
+              <AdminPage adminOnly>
+                <ContentManagement />
+              </AdminPage>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <AdminPage adminOnly>
+                <Orders />
+              </AdminPage>
+            }
+          />
 
-        <Route
-          path="/users"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <MainLayout>
-                  <Users />
-                </MainLayout>
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/audit-logs"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <MainLayout>
-                  <AuditLogs />
-                </MainLayout>
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-  path="/settings"
-  element={
-    <ProtectedRoute>
-      {JSON.parse(
-        localStorage.getItem("user")
-      )?.role === "ADMIN" ? (
-        <MainLayout>
-          <Settings />
-        </MainLayout>
-      ) : (
-        <Navigate to={ADMIN_DASHBOARD_PATH} replace />
-      )}
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/my-account"
-  element={
-    <ProtectedRoute>
-      <MainLayout>
-        <MyAccount />
-      </MainLayout>
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/products"
-  element={
-    <ProtectedRoute>
-      <AdminRoute>
-        <MainLayout>
-          <Products />
-        </MainLayout>
-      </AdminRoute>
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/content"
-  element={
-    <ProtectedRoute>
-      <AdminRoute>
-        <MainLayout>
-          <ContentManagement />
-        </MainLayout>
-      </AdminRoute>
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/orders"
-  element={
-    <ProtectedRoute>
-      <AdminRoute>
-        <MainLayout>
-          <Orders />
-        </MainLayout>
-      </AdminRoute>
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/shop"
-  element={<Shop />}
-/>
-
-<Route
-  path="/checkout/:slug"
-  element={<Checkout />}
-/>
-
-<Route
-  path="/payment/:id"
-  element={<Payment />}
-/>
-
-<Route
-  path="/order/:id"
-  element={<OrderStatus />}
-/>
-
-<Route
-  path="/search-order"
-  element={<SearchOrder />}
-/>
-
-<Route
-  path="/articles"
-  element={<Articles />}
-/>
-
-<Route
-  path="/articles/:slug"
-  element={<ArticleDetail />}
-/>
-
-<Route
-  path="/syarat-ketentuan"
-  element={<LegalPage />}
-/>
-
-<Route
-  path="/kebijakan-privasi"
-  element={<LegalPage />}
-/>
-
-<Route
-  path="/bantuan"
-  element={<LegalPage />}
-/>
-      </Routes>
+          <Route path="/checkout/:slug" element={<Checkout />} />
+          <Route path="/payment/:id" element={<Payment />} />
+          <Route path="/order/:id" element={<OrderStatus />} />
+          <Route path="/search-order" element={<SearchOrder />} />
+          <Route path="/articles" element={<Articles />} />
+          <Route
+            path="/articles/:slug"
+            element={<ArticleDetail />}
+          />
+          <Route path="/syarat-ketentuan" element={<LegalPage />} />
+          <Route path="/kebijakan-privasi" element={<LegalPage />} />
+          <Route path="/bantuan" element={<LegalPage />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

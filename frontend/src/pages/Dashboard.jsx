@@ -1,19 +1,14 @@
 import {
+  lazy,
+  Suspense,
   useEffect,
   useState,
 } from "react";
-import {
-  ComposedChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  Legend,
-} from "recharts";
 import api from "../services/api";
+
+const DashboardChart = lazy(() =>
+  import("../components/DashboardChart")
+);
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
@@ -228,101 +223,13 @@ export default function Dashboard() {
         </h2>
 
         <div className="h-[400px]">
-          <ResponsiveContainer
-            width="100%"
-            height="100%"
+          <Suspense
+            fallback={
+              <div className="h-full animate-pulse rounded-2xl bg-zinc-800/60" />
+            }
           >
-            <ComposedChart
-  data={chartData}
-  margin={{
-    top: 20,
-    right: 10,
-    left: 0,
-    bottom: 0,
-  }}
->
-  <CartesianGrid
-  strokeDasharray="4 4"
-  stroke="#27272a"
-  vertical={false}
-/>
-
-  <XAxis
-    dataKey="date"
-    tick={{ fill: "#a1a1aa" }}
-    axisLine={{ stroke: "#3f3f46" }}
-    tickLine={{ stroke: "#3f3f46" }}
-  />
-
-  <YAxis
-    tick={{ fill: "#a1a1aa" }}
-    axisLine={{ stroke: "#3f3f46" }}
-    tickLine={{ stroke: "#3f3f46" }}
-    tickFormatter={(value) =>
-      `${value / 1000}k`
-    }
-  />
-
-  <Tooltip
-  cursor={{
-    fill: "rgba(255,255,255,0.03)",
-  }}
-  contentStyle={{
-    background:
-      "rgba(24,24,27,0.95)",
-    border:
-      "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "16px",
-    color: "#fff",
-    backdropFilter: "blur(10px)",
-  }}
-  labelStyle={{
-    color: "#fff",
-    fontWeight: "bold",
-  }}
-  formatter={(value, name) => [
-    `Rp ${Number(value).toLocaleString()}`,
-    name,
-  ]}
-/>
-
-  <Legend
-  wrapperStyle={{
-    paddingTop: 20,
-  }}
-/>
-
-  <Bar
-  dataKey="income"
-  name="Pendapatan"
-  fill="#22c55e"
-  radius={[12, 12, 0, 0]}
-/>
-
-  <Bar
-  dataKey="expense"
-  name="Pengeluaran"
-  fill="#ef4444"
-  radius={[12, 12, 0, 0]}
-/>
-
-  <Line
-  type="monotone"
-  dataKey="profit"
-  name="Profit"
-  stroke="#eab308"
-  strokeWidth={4}
-  dot={false}
-  activeDot={{
-    r: 8,
-    fill: "#eab308",
-    stroke: "#18181b",
-    strokeWidth: 3,
-  }}
-/>
-
-</ComposedChart>
-          </ResponsiveContainer>
+            <DashboardChart data={chartData} />
+          </Suspense>
         </div>
       </div>
 

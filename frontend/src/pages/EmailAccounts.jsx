@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 import api from "../services/api";
 
 import InviteModal from "../components/InviteModal";
+import {
+  exportRowsToPdf,
+  exportRowsToXlsx,
+} from "../utils/exportFiles";
 
 const parseImportLine = (line) => {
   const delimiter = line.includes("\t")
@@ -397,7 +398,7 @@ export default function EmailAccounts() {
     }
   };
 
-  const exportEmailExcel = () => {
+  const exportEmailExcel = async () => {
   const data = emails.map((item) => ({
     Email: item.email,
     Layanan: item.serviceName,
@@ -418,44 +419,25 @@ export default function EmailAccounts() {
     ).toLocaleDateString(),
   }));
 
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-
-  XLSX.utils.book_append_sheet(
-    workbook,
-    worksheet,
-    "Email Accounts"
-  );
-
-  XLSX.writeFile(
-    workbook,
-    "email-accounts.xlsx"
-  );
-
+  await exportRowsToXlsx(data, "email-accounts.xlsx", "Email Accounts");
   toast.success("Excel berhasil di-export");
 };
 
-const exportEmailPDF = () => {
-  const doc = new jsPDF();
-
-  doc.text("Laporan Email Accounts", 14, 15);
-
-  autoTable(doc, {
-    startY: 25,
-    head: [
-      [
-        "Email",
-        "Layanan",
-        "Durasi",
-        "Plan",
-        "Password",
-        "Recovery",
-        "Status",
-        "Slot",
-        "Created At",
-      ],
+const exportEmailPDF = async () => {
+  await exportRowsToPdf({
+    title: "Laporan Email Accounts",
+    headers: [
+      "Email",
+      "Layanan",
+      "Durasi",
+      "Plan",
+      "Password",
+      "Recovery",
+      "Status",
+      "Slot",
+      "Created At",
     ],
-    body: emails.map((item) => [
+    rows: emails.map((item) => [
       item.email,
       item.serviceName,
       item.duration || "-",
@@ -472,10 +454,8 @@ const exportEmailPDF = () => {
       } / ${item.familySlot}`,
       new Date(item.createdAt).toLocaleDateString(),
     ]),
+    filename: "email-accounts.pdf",
   });
-
-  doc.save("email-accounts.pdf");
-
   toast.success("PDF berhasil di-export");
 };
 
