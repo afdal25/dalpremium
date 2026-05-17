@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model EmailAccount {
+  id         Int            @id @default(autoincrement())
+  serviceName String
+  duration   String?
+  plan       String?
+  email      String         @unique
+  password   String
+  recovery   String?
+  status     String
+  familySlot Int
+  createdAt  DateTime       @default(now())
+  invites    FamilyInvite[]
+  orders Order[]
+}
+
+model FamilyInvite {
+  id             Int          @id @default(autoincrement())
+  customerEmail  String
+  status         String
+  createdAt      DateTime     @default(now())
+  emailAccountId Int
+
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  type        String
+  amount      Float
+  description String
+  createdAt   DateTime @default(now())
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String   @unique
+  password    String
+  role        String   @default("STAFF")
+  phone       String?
+  address     String?
+  avatar      String?
+  resetToken  String?
+  resetTokenExpiresAt DateTime?
+  lastLoginAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  userName  String
+  userRole  String
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  id                Int      @id @default(autoincrement())
+  appName           String   @default("DALPREMIUM")
+  logo              String?
+  currency          String   @default("IDR")
+  timezone          String   @default("Asia/Jakarta")
+  defaultFamilySlot Int      @default(5)
+  paymentGatewayVendor String @default("midtrans")
+  paymentGatewayMerchantId String?
+  paymentGatewayApiKey     String?
+  paymentGatewayPrivateKey String?
+  paymentGatewayCallbackSecret String?
+  waGatewayVendor      String @default("fonnte")
+  waGatewayApiKey      String?
+  waGatewaySender      String?
+  footerDescription    String? @db.Text
+  footerEmail          String?
+  footerPhone          String?
+  footerWhatsapp       String?
+  footerAddress        String? @db.Text
+  footerPaymentImage   String?
+  footerSocialInstagram String?
+  footerSocialTiktok    String?
+  footerSocialYoutube   String?
+  footerSocialTelegram  String?
+  footerOperationalHours String? @db.Text
+  updatedAt         DateTime @updatedAt
+}
+
+model FooterPaymentLogo {
+  id        Int      @id @default(autoincrement())
+  image     String
+  title     String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentMethod {
+  id            Int      @id @default(autoincrement())
+  name          String
+  logo          String?
+  qrisImage     String?
+  accountNumber String
+  accountName   String
+  instructions  String?
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Banner {
+  id        Int      @id @default(autoincrement())
+  image     String
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TestimonialImage {
+  id        Int      @id @default(autoincrement())
+  image     String
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Faq {
+  id        Int      @id @default(autoincrement())
+  questionId String
+  answerId   String
+  questionEn String?
+  answerEn   String?
+  isActive   Boolean @default(true)
+  sortOrder  Int     @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Article {
+  id        Int      @id @default(autoincrement())
+  title     String
+  slug      String   @unique
+  excerpt   String?  @db.Text
+  content   String   @db.Text
+  image     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LegalDocument {
+  id        Int      @id @default(autoincrement())
+  type      String   @unique
+  title     String
+  intro     String   @db.Text
+  content   String   @db.Text
+  note      String?  @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductCategory {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  slug      String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+model Product {
+  id           Int      @id @default(autoincrement())
+  name         String
+  slug String @unique
+  price        Int
+  duration     String?
+  plan         String?
+  description  String?
+  image        String?
+  deliveryType String   // INVITE / ACCOUNT
+  categoryId   Int?
+  category     ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orders       Order[]
+}
+
+model Order {
+  id             Int      @id @default(autoincrement())
+  customerName   String
+  customerPhone  String
+  customerEmail  String
+  targetEmail    String?
+  status         String   @default("PENDING") 
+  paymentProof   String?
+  paymentGatewayVendor    String?
+  paymentGatewayReference String?
+  paymentGatewayToken     String? @db.Text
+  paymentGatewayUrl       String? @db.Text
+  paymentGatewayStatus    String?
+  paymentGatewayRaw       String? @db.Text
+  paidAt                  DateTime?
+  totalPrice     Int
+  deliveredEmail    String?
+  deliveredPassword String?
+  accessToken String @unique
+  productId      Int
+  product        Product  @relation(fields: [productId], references: [id])
+  emailAccountId Int?
+  emailAccount   EmailAccount? @relation(fields: [emailAccountId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

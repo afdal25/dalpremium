@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Transaction {
+  id               Int      @id @default(autoincrement())
+  type             TransactionType
+  amount           Float
+  description      String
+  transaction_date DateTime
+  created_at       DateTime @default(now())
+}
+
+model EmailAccount {
+  id              Int            @id @default(autoincrement())
+  email_address   String         @unique
+  password        String
+  recovery_email  String?
+  status          EmailStatus    @default(BELUM_DIGUNAKAN)
+  creation_date   DateTime
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+
+  invites         FamilyInvite[]
+}
+
+model FamilyInvite {
+  id               Int           @id @default(autoincrement())
+  email_account_id Int
+  invited_email    String
+  invite_status    InviteStatus @default(PENDING)
+  invite_date      DateTime
+
+  emailAccount EmailAccount @relation(fields: [email_account_id], references: [id], onDelete: Cascade)
+}
+
+enum TransactionType {
+  PENDAPATAN
+  PENGELUARAN
+}
+
+enum EmailStatus {
+  BELUM_DIGUNAKAN
+  SUDAH_DIGUNAKAN
+  TERJUAL
+  ERROR
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}

@@ -1,0 +1,221 @@
+@import "tailwindcss";
+
+.admin-theme .bg-zinc-950,
+.admin-theme .bg-slate-950 {
+  background-color: #0f0d0a !important;
+}
+
+.admin-theme .bg-gradient-to-br,
+.admin-theme .bg-gradient-to-r {
+  background-image: none !important;
+  background-color: #0f0d0a !important;
+}
+
+.admin-theme .bg-zinc-900,
+.admin-theme .bg-zinc-900\/90,
+.admin-theme .bg-zinc-800,
+.admin-theme .bg-zinc-800\/80,
+.admin-theme .bg-slate-900 {
+  background-color: #17130f !important;
+}
+
+.admin-theme .border-zinc-800,
+.admin-theme .border-zinc-700,
+.admin-theme .border-white\/10 {
+  border-color: rgba(213, 167, 86, 0.16) !important;
+}
+
+.admin-theme .bg-indigo-600,
+.admin-theme .bg-indigo-500,
+.admin-theme .hover\:bg-indigo-500:hover {
+  background-color: #d5a756 !important;
+  color: #14100b !important;
+}
+
+.admin-theme .text-indigo-400,
+.admin-theme .text-cyan-400,
+.admin-theme .text-amber-300 {
+  color: #f0cf87 !important;
+}
+
+.admin-theme input:focus,
+.admin-theme select:focus,
+.admin-theme textarea:focus {
+  border-color: #d5a756 !important;
+}
+
+.admin-theme select,
+.admin-theme option,
+select option {
+  background-color: #0f0d0a;
+  color: #fff;
+}
+
+.admin-theme .overflow-x-auto,
+.admin-theme .overflow-x-scroll,
+.admin-theme div:has(> table) {
+  max-width: 100%;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-theme table {
+  width: max-content !important;
+  min-width: 100% !important;
+  table-layout: auto;
+}
+
+.admin-theme th,
+.admin-theme td {
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.admin-theme td p,
+.admin-theme td div {
+  white-space: normal;
+}
+
+.admin-theme th,
+.admin-theme td {
+  padding: 0.9rem;
+}
+
+.admin-theme input,
+.admin-theme select,
+.admin-theme textarea,
+.admin-theme button {
+  min-width: 0;
+}
+
+.admin-theme .absolute {
+  max-width: calc(100vw - 1rem);
+}
+
+html,
+body,
+#root {
+  min-width: 0;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+body:not(:has(.admin-theme)) img {
+  transition: transform 0.45s ease;
+}
+
+body:not(:has(.admin-theme)) img:hover {
+  transform: scale(1.04);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .admin-theme .grid.grid-cols-5 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  .admin-theme .grid.grid-cols-4,
+  .admin-theme .grid.grid-cols-3,
+  .admin-theme .grid.grid-cols-2 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  .admin-theme .flex:not(.shrink-0) {
+    min-width: 0;
+  }
+
+  .admin-theme [class*="w-[400px]"],
+  .admin-theme [class*="w-[500px]"],
+  .admin-theme [class*="w-[600px]"],
+  .admin-theme [class*="w-[800px]"] {
+    width: calc(100vw - 2rem) !important;
+    max-width: calc(100vw - 2rem) !important;
+  }
+
+  .admin-theme [class*="max-w-2xl"],
+  .admin-theme [class*="max-w-3xl"],
+  .admin-theme [class*="max-w-4xl"] {
+    max-width: 100% !important;
+  }
+
+  .admin-theme table {
+    font-size: 0.875rem;
+  }
+
+  .admin-theme th,
+  .admin-theme td {
+    padding: 0.75rem;
+  }
+
+  .admin-theme h1 {
+    font-size: 1.75rem !important;
+    line-height: 2.1rem !important;
+  }
+
+  .admin-theme input,
+  .admin-theme select,
+  .admin-theme textarea,
+  .admin-theme button {
+    max-width: 100%;
+  }
+
+  .admin-theme input,
+  .admin-theme select,
+  .admin-theme textarea {
+    font-size: 0.92rem;
+  }
+
+  .admin-theme button {
+    font-size: 0.875rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1180px) {
+  .admin-theme .grid.grid-cols-5,
+  .admin-theme .grid.grid-cols-4,
+  .admin-theme .grid.grid-cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .admin-theme .grid.grid-cols-2 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  .admin-theme h1 {
+    font-size: 2rem !important;
+    line-height: 2.35rem !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-theme main {
+    padding: 0.75rem !important;
+  }
+
+  .admin-theme h1 {
+    font-size: 1.45rem !important;
+    line-height: 1.8rem !important;
+  }
+
+  .admin-theme h2 {
+    font-size: 1.1rem !important;
+    line-height: 1.45rem !important;
+  }
+}
