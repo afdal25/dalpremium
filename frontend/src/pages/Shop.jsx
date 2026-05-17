@@ -315,6 +315,8 @@ export default function Shop() {
   const [query, setQuery] = useState("");
   const [activeNav, setActiveNav] = useState("Produk");
   const [activeSlide, setActiveSlide] = useState(0);
+  const [hideBannerForProductHash, setHideBannerForProductHash] =
+    useState(() => window.location.hash === "#produk");
   const [language, setLanguage] = useState(
     localStorage.getItem("shopLanguage") || "id"
   );
@@ -403,6 +405,7 @@ export default function Shop() {
     const syncHash = () => {
       const hash = window.location.hash.replace("#", "");
       const matched = sections.find(([id]) => id === hash);
+      setHideBannerForProductHash(hash === "produk");
 
       if (matched) {
         setActiveNav(matched[1]);
@@ -565,17 +568,19 @@ export default function Shop() {
     return content.banners.map((banner) => ({
       id: banner.id,
       image: optimizedImageUrl(banner.image, {
-        width: 1440,
+        width: 960,
         crop: "limit",
+        quality: "auto:eco",
       }),
-      srcSet: imageSrcSet(banner.image, [640, 960, 1440], {
+      srcSet: imageSrcSet(banner.image, [360, 540, 720, 960], {
         crop: "limit",
+        quality: "auto:eco",
       }),
     }));
   }, [content.banners]);
 
   const activeBanner =
-    carouselSlides.length > 0
+    !hideBannerForProductHash && carouselSlides.length > 0
       ? carouselSlides[activeSlide % carouselSlides.length]
       : null;
   const visibleTestimonials = showAllTestimonials
@@ -609,7 +614,7 @@ export default function Shop() {
   }, [activeSlide, carouselSlides.length]);
 
   useEffect(() => {
-    if (loading || carouselSlides.length <= 1) {
+    if (hideBannerForProductHash || loading || carouselSlides.length <= 1) {
       return undefined;
     }
 
@@ -618,7 +623,7 @@ export default function Shop() {
     }, 5000);
 
     return () => window.clearInterval(timer);
-  }, [carouselSlides.length, loading]);
+  }, [carouselSlides.length, hideBannerForProductHash, loading]);
 
   return (
     <div className="min-h-screen bg-[#0f0d0a] text-white">
@@ -632,7 +637,7 @@ export default function Shop() {
       />
 
       <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
-        {(loading || activeBanner) && (
+        {!hideBannerForProductHash && (loading || activeBanner) && (
           <section className="relative mb-7 overflow-hidden rounded-2xl border border-[#d5a756]/15 bg-[#17130f] sm:rounded-[28px]">
             <div className="relative aspect-[3/1] min-h-0 sm:aspect-auto sm:min-h-[320px] lg:min-h-[380px]">
               {loading ? (
@@ -761,11 +766,12 @@ export default function Shop() {
                           src={optimizedImageUrl(group.image, {
                             width: 520,
                             crop: "limit",
+                            quality: "auto:eco",
                           })}
                           srcSet={imageSrcSet(
                             group.image,
                             [320, 520, 720],
-                            { crop: "limit" }
+                            { crop: "limit", quality: "auto:eco" }
                           )}
                           sizes="(max-width: 640px) 78vw, (max-width: 1024px) 45vw, 25vw"
                           alt={group.name}
@@ -811,7 +817,7 @@ export default function Shop() {
                         <div className="min-w-0">
                           <p className="text-xs font-semibold text-zinc-400">{t.startsFrom}</p>
                           <p className="text-xl font-black leading-tight text-white sm:text-2xl">{formatRupiah(group.minPrice)}</p>
-                          <p className="mt-0.5 text-xs font-bold text-zinc-500">{billingLabel(group.durations)}</p>
+                          <p className="mt-0.5 text-xs font-bold text-zinc-300">{billingLabel(group.durations)}</p>
                         </div>
 
                         <Link
@@ -893,9 +899,11 @@ export default function Shop() {
                   src={optimizedImageUrl(item.image, {
                     width: 520,
                     crop: "limit",
+                    quality: "auto:eco",
                   })}
                   srcSet={imageSrcSet(item.image, [320, 520, 760], {
                     crop: "limit",
+                    quality: "auto:eco",
                   })}
                   sizes="(max-width: 640px) 82vw, (max-width: 1024px) 45vw, 33vw"
                   alt={t.testimonialTitle}
