@@ -511,8 +511,8 @@ export default function ContentManagement() {
                 className="h-full w-full object-contain p-1"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-xl font-black text-[#d5a756]">
-                D
+              <div className="flex h-full w-full items-center justify-center">
+                <span className="h-8 w-8 animate-pulse rounded-full bg-[#d5a756]/20" />
               </div>
             )}
           </div>

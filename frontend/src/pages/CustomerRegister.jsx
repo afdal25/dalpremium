@@ -92,7 +92,7 @@ export default function CustomerRegister() {
             to="/"
             className="mx-auto mb-6 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-[#d5a756]/20 bg-black"
           >
-            <span className="text-xl font-black text-[#d5a756]">D</span>
+            <span className="h-8 w-8 rounded-full bg-[#d5a756]/20" />
           </Link>
 
           <h1 className="text-center text-3xl font-black">

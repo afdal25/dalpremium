@@ -44,7 +44,7 @@ export default function PublicFooter({ logo, settings, paymentLogos = [] }) {
                   className="h-full w-full object-contain p-1"
                 />
               ) : (
-                <span className="text-sm font-black">D</span>
+                <span className="h-6 w-6 animate-pulse rounded-full bg-[#d5a756]/20" />
               )}
             </span>
             DALPREMIUM
