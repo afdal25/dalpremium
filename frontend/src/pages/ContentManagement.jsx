@@ -512,7 +512,7 @@ export default function ContentManagement() {
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
-                <span className="h-8 w-8 animate-pulse rounded-full bg-[#d5a756]/20" />
+                <span className="h-full w-full opacity-0" />
               </div>
             )}
           </div>

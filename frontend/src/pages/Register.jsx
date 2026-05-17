@@ -84,7 +84,7 @@ export default function Register() {
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(213,167,86,.16),transparent_32%),linear-gradient(135deg,#0f0d0a,#050403)]" />
       <div className="relative w-full max-w-lg rounded-2xl border border-[#d5a756]/20 bg-[#17130f]/95 p-6 shadow-2xl shadow-black/50 sm:p-8">
         <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-[#d5a756]/25 bg-black">
-          <span className="h-8 w-8 rounded-full bg-[#d5a756]/20" />
+          <span className="h-full w-full opacity-0" />
         </div>
 
         <h1 className="text-center text-3xl font-black text-[#d5a756]">Daftar Admin</h1>
