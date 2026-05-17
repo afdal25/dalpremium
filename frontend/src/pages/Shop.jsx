@@ -48,11 +48,11 @@ const copy = {
   },
   en: {
     products: "Products",
-    checkTransaction: "Check Transaction",
-    howToOrder: "How To Order",
+    checkTransaction: "Track Order",
+    howToOrder: "How to Order",
     testimonials: "Testimonials",
     faq: "FAQ",
-    articles: "Articles",
+    articles: "Article",
     searchPlaceholder: "Search premium services",
     country: "Location",
     language: "Language",
@@ -72,7 +72,7 @@ const copy = {
     choose: "Buy",
     noProductTitle: "No product found",
     noProductDesc: "Try another filter or add products from admin panel.",
-    howTitle: "How To Order",
+    howTitle: "How to Order",
     howSubtitle: "A practical way to subscribe to premium services at Dalpremium",
     order: "Order Service",
     payment: "Payment",
@@ -496,6 +496,10 @@ export default function Shop() {
     : content.testimonials.slice(0, 6);
 
   const changeSlide = (direction) => {
+    if (carouselSlides.length <= 1) {
+      return;
+    }
+
     setActiveSlide((current) => {
       const next = current + direction;
 
@@ -517,6 +521,18 @@ export default function Shop() {
     }
   }, [activeSlide, carouselSlides.length]);
 
+  useEffect(() => {
+    if (loading || carouselSlides.length <= 1) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      setActiveSlide((current) => (current + 1) % carouselSlides.length);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [carouselSlides.length, loading]);
+
   return (
     <div className="min-h-screen bg-[#0f0d0a] text-white">
       <PublicTopBar
@@ -536,9 +552,10 @@ export default function Shop() {
               ) : (
                 <>
                   <img
+                    key={activeBanner.image}
                     src={activeBanner.image}
                     alt="Banner DALPREMIUM"
-                    className="absolute inset-0 h-full w-full object-contain opacity-90 sm:object-cover sm:opacity-80"
+                    className="banner-fade absolute inset-0 h-full w-full object-contain opacity-90 sm:object-cover sm:opacity-80"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-black/10" />
 
@@ -568,7 +585,7 @@ export default function Shop() {
                         key={`${slide.image}-${index}`}
                         onClick={() => setActiveSlide(index)}
                         className={`h-2.5 rounded-full transition ${
-                          activeSlide === index ? "w-8 bg-[#d5a756]" : "w-2.5 bg-white/50"
+                          activeSlide % carouselSlides.length === index ? "w-8 bg-[#d5a756]" : "w-2.5 bg-white/50"
                         }`}
                         aria-label={`Slide ${index + 1}`}
                       />

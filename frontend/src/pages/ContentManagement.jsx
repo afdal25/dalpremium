@@ -171,12 +171,6 @@ export default function ContentManagement() {
       const formData = new FormData();
       formData.append("logo", logoFile);
       const response = await api.put("/settings/logo", formData);
-      if (response.data.settings?.logo) {
-        localStorage.setItem(
-          "appLogo",
-          imageUrl(response.data.settings.logo)
-        );
-      }
       setLogoFile(null);
       toast.success("Logo berhasil diperbarui");
       loadContent();

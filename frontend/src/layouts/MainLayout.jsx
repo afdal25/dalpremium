@@ -10,12 +10,8 @@ export default function MainLayout({ children }) {
   const [openNotif, setOpenNotif] = useState(false);
   const [openSidebar, setOpenSidebar] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [appName, setAppName] = useState(
-    localStorage.getItem("appName") || "DALPREMIUM"
-  );
-  const [appLogo, setAppLogo] = useState(
-    localStorage.getItem("appLogo") || "/logofix.png"
-  );
+  const [appName, setAppName] = useState("DALPREMIUM");
+  const [appLogo, setAppLogo] = useState("/favicon.png");
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -32,15 +28,10 @@ export default function MainLayout({ children }) {
 
         const nextLogo = response.data.logo
           ? imageUrl(response.data.logo)
-          : "/logofix.png";
+          : "/favicon.png";
 
-        setAppName(response.data.appName);
+        setAppName(response.data.appName || "DALPREMIUM");
         setAppLogo(nextLogo);
-        localStorage.setItem(
-          "appName",
-          response.data.appName
-        );
-        localStorage.setItem("appLogo", nextLogo);
       } catch {
         console.log("Settings tidak ditemukan");
       }
@@ -113,8 +104,6 @@ export default function MainLayout({ children }) {
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    localStorage.removeItem("appName");
-    localStorage.removeItem("appLogo");
     window.location.href = ADMIN_LOGIN_PATH;
   };
 

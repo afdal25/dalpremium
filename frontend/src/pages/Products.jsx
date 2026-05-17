@@ -553,7 +553,7 @@ export default function Products() {
             placeholder="Deskripsi"
             value={form.description}
             onChange={handleChange}
-            className="col-span-2 h-24 bg-zinc-800 border border-zinc-700 rounded-xl p-3"
+            className="h-24 bg-zinc-800 border border-zinc-700 rounded-xl p-3 md:col-span-2"
           />
         </div>
 
@@ -650,10 +650,10 @@ export default function Products() {
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-x-auto">
-        <table className="w-full">
+        <table className="product-table">
           <thead className="bg-zinc-800">
             <tr>
-              <th className="text-left p-4">Product</th>
+              <th className="w-[360px] text-left p-4">Product</th>
               <th className="text-left p-4">Kategori</th>
               <th className="text-left p-4">Duration</th>
               <th className="text-left p-4">Plan</th>
@@ -702,7 +702,7 @@ export default function Products() {
 
                         <div>
                           <p className="font-semibold">{item.name}</p>
-                          <p className="text-sm text-zinc-400 line-clamp-1">
+                          <p className="product-description text-sm text-zinc-400">
                             {item.description || "-"}
                           </p>
                         </div>
@@ -848,7 +848,7 @@ export default function Products() {
               Edit Product
             </h2>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <input
                 name="name"
                 value={editData.name}
@@ -933,10 +933,10 @@ export default function Products() {
                 name="description"
                 value={editData.description || ""}
                 onChange={handleEditChange}
-                className="col-span-2 h-24 bg-zinc-800 border border-zinc-700 rounded-xl p-3"
+                className="h-24 bg-zinc-800 border border-zinc-700 rounded-xl p-3 md:col-span-2"
               />
 
-              <label className="col-span-2 flex items-center gap-3 text-zinc-300">
+              <label className="flex items-center gap-3 text-zinc-300 md:col-span-2">
                 <input
                   type="checkbox"
                   name="isActive"

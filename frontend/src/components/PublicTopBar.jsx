@@ -6,6 +6,7 @@ import {
   CUSTOMER_REGISTER_PATH,
 } from "../config/routes";
 import { assetUrl as imageUrl } from "../utils/url";
+import api from "../services/api";
 
 const navItems = [
   { label: "Produk", key: "products", href: "/#produk", icon: "bag" },
@@ -26,22 +27,30 @@ const navCopy = {
     articles: "Artikel",
     login: "Masuk",
     register: "Daftar",
+    account: "Akun Saya",
+    logout: "Keluar",
     location: "Lokasi",
     language: "Bahasa",
     indonesia: "Indonesia",
+    indonesian: "Indonesia",
+    english: "Inggris",
   },
   en: {
     products: "Products",
-    checkTransaction: "Check Transaction",
-    howToOrder: "How To Order",
+    checkTransaction: "Track Order",
+    howToOrder: "How to Order",
     testimonials: "Testimonials",
     faq: "FAQ",
-    articles: "Articles",
+    articles: "Article",
     login: "Login",
     register: "Register",
+    account: "My Account",
+    logout: "Logout",
     location: "Location",
     language: "Language",
     indonesia: "Indonesia",
+    indonesian: "Indonesian",
+    english: "English",
   },
 };
 
@@ -163,6 +172,7 @@ export default function PublicTopBar({
   const [localLanguage, setLocalLanguage] = useState(
     (localStorage.getItem("shopLanguage") || "id").toLowerCase()
   );
+  const [remoteLogo, setRemoteLogo] = useState("");
   const [customerUser, setCustomerUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("customerUser"));
@@ -185,12 +195,27 @@ export default function PublicTopBar({
 
   useEffect(() => {
     if (logo) {
-      const nextLogo = imageUrl(logo);
-      localStorage.setItem("appLogo", nextLogo);
+      setRemoteLogo("");
+      return undefined;
     }
+
+    let isMounted = true;
+
+    api
+      .get("/content")
+      .then((response) => {
+        if (isMounted && response.data.settings?.logo) {
+          setRemoteLogo(imageUrl(response.data.settings.logo));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
   }, [logo]);
 
-  const displayLogo = logo ? imageUrl(logo) : "/favicon.png";
+  const displayLogo = logo ? imageUrl(logo) : remoteLogo || "/favicon.png";
   const language = (controlledLanguage || localLanguage || "id").toLowerCase();
   const copy = navCopy[language] || navCopy.id;
 
@@ -273,7 +298,7 @@ export default function PublicTopBar({
             ? "border-[#d5a756] bg-[#d5a756]/10 text-[#f0cf87]"
             : "border-white/10 bg-black/20 text-zinc-200 hover:border-white/25 hover:text-white"
         }`
-      : `flex h-12 shrink-0 items-center border-b-2 px-3 text-sm font-bold transition xl:px-4 ${
+      : `flex h-12 shrink-0 items-center border-b-2 px-2 text-xs font-bold transition xl:px-3 xl:text-sm ${
           isActive
             ? "border-[#d5a756] text-[#d5a756]"
             : "border-transparent text-zinc-200 hover:border-white/25 hover:text-white"
@@ -319,7 +344,7 @@ export default function PublicTopBar({
           />
         </Link>
 
-        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 lg:flex">
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex">
           {navItems.map((item) => renderNavItem(item))}
         </nav>
 
@@ -331,7 +356,7 @@ export default function PublicTopBar({
               setOpenCustomerMenu(false);
               setOpenLocaleMenu(!openLocaleMenu);
             }}
-            className="flex h-11 items-center gap-3 rounded-lg border border-[#d5a756]/20 bg-black/20 px-4 text-sm font-bold text-zinc-100 transition hover:border-[#d5a756]/60 xl:h-12"
+            className="flex h-11 items-center gap-2 rounded-lg border border-[#d5a756]/20 bg-black/20 px-3 text-xs font-bold text-zinc-100 transition hover:border-[#d5a756]/60 xl:h-12 xl:text-sm"
           >
             <Flag country="id" />
             {language.toUpperCase()} / IDR
@@ -361,7 +386,7 @@ export default function PublicTopBar({
                     }`}
                   >
                     <Flag country={item === "id" ? "id" : "us"} />{" "}
-                    {item.toUpperCase()}
+                    {item === "id" ? copy.indonesian : copy.english}
                   </button>
                 ))}
               </div>
@@ -409,14 +434,14 @@ export default function PublicTopBar({
                     onClick={closeMenus}
                     className="block px-4 py-3 text-sm font-bold text-zinc-200 transition hover:bg-white/5"
                   >
-                    My Account
+                    {copy.account}
                   </Link>
                   <button
                     type="button"
                     onClick={logoutCustomer}
                     className="w-full px-4 py-3 text-left text-sm font-bold text-red-300 transition hover:bg-red-500/10"
                   >
-                    Logout
+                    {copy.logout}
                   </button>
                 </div>
               )}
@@ -502,7 +527,7 @@ export default function PublicTopBar({
                       }`}
                     >
                       <Flag country={item === "id" ? "id" : "us"} />{" "}
-                      {item.toUpperCase()}
+                      {item === "id" ? copy.indonesian : copy.english}
                     </button>
                   ))}
                 </div>

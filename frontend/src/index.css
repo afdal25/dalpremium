@@ -65,6 +65,21 @@ select option {
   table-layout: auto;
 }
 
+.admin-theme .product-table {
+  width: 100% !important;
+  min-width: 1120px !important;
+  table-layout: fixed !important;
+}
+
+.admin-theme .product-table .product-description {
+  display: -webkit-box;
+  max-width: 28rem;
+  overflow: hidden;
+  white-space: normal !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .admin-theme th,
 .admin-theme td {
   vertical-align: top;
@@ -124,6 +139,22 @@ body:not(:has(.admin-theme)) img:hover {
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+@keyframes bannerFade {
+  from {
+    opacity: 0;
+    transform: scale(1.015);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.banner-fade {
+  animation: bannerFade 0.65s ease both;
 }
 
 @media (max-width: 767px) {

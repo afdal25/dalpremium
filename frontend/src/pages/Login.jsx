@@ -11,21 +11,14 @@ export default function Login() {
     email: localStorage.getItem("rememberEmail") || "",
     password: "",
   });
-
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] =
-    useState(false);
-  const [rememberMe, setRememberMe] =
-    useState(
-      localStorage.getItem("rememberEmail")
-        ? true
-        : false
-    );
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(Boolean(localStorage.getItem("rememberEmail")));
 
-  const handleChange = (e) => {
+  const handleChange = (event) => {
     setForm({
       ...form,
-      [e.target.name]: e.target.value,
+      [event.target.name]: event.target.value,
     });
   };
 
@@ -37,95 +30,71 @@ export default function Login() {
 
     try {
       setLoading(true);
+      const response = await api.post(`${AUTH_API_PREFIX}/sign-in`, form);
 
-      const response = await api.post(
-        `${AUTH_API_PREFIX}/sign-in`,
-        form
-      );
-
-      localStorage.setItem(
-        "token",
-        response.data.token
-      );
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify(response.data.user)
-      );
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
 
       if (rememberMe) {
-        localStorage.setItem(
-          "rememberEmail",
-          form.email
-        );
+        localStorage.setItem("rememberEmail", form.email);
       } else {
         localStorage.removeItem("rememberEmail");
       }
 
       toast.success("Login berhasil");
-
       setTimeout(() => {
-        window.location.href =
-          ADMIN_DASHBOARD_PATH;
+        window.location.href = ADMIN_DASHBOARD_PATH;
       }, 500);
     } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          "Email atau password salah"
-      );
+      toast.error(error.response?.data?.message || "Email atau password salah");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-black text-white flex items-center justify-center overflow-hidden">
-      <div className="w-full max-w-[400px] bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl animate-[fadeIn_0.4s_ease-in-out] sm:p-8">
-        <h1 className="text-3xl font-bold mb-2 text-center">
-          Login
-        </h1>
+    <div className="admin-theme flex min-h-screen items-center justify-center overflow-hidden bg-[#0f0d0a] px-4 py-8 text-white">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(213,167,86,.16),transparent_32%),linear-gradient(135deg,#0f0d0a,#050403)]" />
+      <div className="relative w-full max-w-md rounded-2xl border border-[#d5a756]/20 bg-[#17130f]/95 p-6 shadow-2xl shadow-black/50 sm:p-8">
+        <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-[#d5a756]/25 bg-black">
+          <img src="/favicon.png" alt="DALPREMIUM" className="h-full w-full object-contain p-1" />
+        </div>
 
-        <p className="text-zinc-400 mb-6 text-center">
-          Masuk ke dashboard management
+        <h1 className="text-center text-3xl font-black text-[#d5a756]">Masuk Admin</h1>
+        <p className="mb-6 mt-2 text-center text-sm text-zinc-400">
+          Kelola produk, pesanan, content, dan pengaturan DALPREMIUM.
         </p>
 
         <div className="space-y-4">
           <input
             type="email"
             name="email"
-            placeholder="Email"
+            placeholder="Email admin"
             value={form.email}
             onChange={handleChange}
-            className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl p-3 outline-none focus:border-indigo-500 transition"
+            className="h-12 w-full rounded-lg border border-[#d5a756]/15 bg-black/30 px-4 outline-none transition placeholder:text-zinc-500 focus:border-[#d5a756]"
           />
 
           <div className="relative">
             <input
-              type={
-                showPassword
-                  ? "text"
-                  : "password"
-              }
+              type={showPassword ? "text" : "password"}
               name="password"
               placeholder="Password"
               value={form.password}
               onChange={handleChange}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
                   login();
                 }
               }}
-              className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl p-3 pr-12 outline-none focus:border-indigo-500 transition"
+              className="h-12 w-full rounded-lg border border-[#d5a756]/15 bg-black/30 px-4 pr-20 outline-none transition placeholder:text-zinc-500 focus:border-[#d5a756]"
             />
-
             <button
               type="button"
-              onClick={() =>
-                setShowPassword(!showPassword)
-              }
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#f0cf87] hover:text-white"
             >
-              {showPassword ? "🙈" : "👁"}
+              {showPassword ? "Sembunyi" : "Lihat"}
             </button>
           </div>
 
@@ -133,19 +102,19 @@ export default function Login() {
             <input
               type="checkbox"
               checked={rememberMe}
-              onChange={(e) =>
-                setRememberMe(e.target.checked)
-              }
+              onChange={(event) => setRememberMe(event.target.checked)}
+              className="accent-[#d5a756]"
             />
-            Remember me
+            Ingat email admin
           </label>
 
           <button
+            type="button"
             onClick={login}
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 transition py-3 rounded-xl"
+            className="h-12 w-full rounded-lg bg-[#d5a756] font-black text-[#14100b] transition hover:bg-[#f0cf87] disabled:opacity-50"
           >
-            {loading ? "Loading..." : "Login"}
+            {loading ? "Memproses..." : "Masuk"}
           </button>
         </div>
       </div>

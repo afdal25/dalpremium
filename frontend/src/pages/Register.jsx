@@ -11,12 +11,10 @@ export default function Register() {
     name: "",
     email: "",
     phone: "",
-    address: "",
     password: "",
     confirmPassword: "",
     registerSecret: "",
   });
-
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -26,15 +24,15 @@ export default function Register() {
     form.password.length >= 8
       ? "Kuat"
       : form.password.length >= 5
-      ? "Sedang"
-      : form.password.length > 0
-      ? "Lemah"
-      : "";
+        ? "Sedang"
+        : form.password.length > 0
+          ? "Lemah"
+          : "";
 
-  const handleChange = (e) => {
+  const handleChange = (event) => {
     setForm({
       ...form,
-      [e.target.name]: e.target.value,
+      [event.target.name]: event.target.value,
     });
   };
 
@@ -42,191 +40,183 @@ export default function Register() {
     if (
       !form.name ||
       !form.email ||
-      !form.phone ||
-      !form.address ||
       !form.password ||
       !form.confirmPassword ||
       !form.registerSecret
     ) {
-      toast.error("Semua field wajib diisi");
+      toast.error("Nama, email, password, dan kode register wajib diisi");
       return;
     }
 
-    if (form.password.length < 6) {
-      toast.error("Password minimal 6 karakter");
+    if (form.password.length < 8) {
+      toast.error("Password minimal 8 karakter");
       return;
     }
 
     if (form.password !== form.confirmPassword) {
-      toast.error("Confirm password tidak sama");
+      toast.error("Konfirmasi password tidak sama");
       return;
     }
 
     try {
       setLoading(true);
-
       await api.post(`${AUTH_API_PREFIX}/create-owner`, {
         name: form.name,
         email: form.email,
         phone: form.phone,
-        address: form.address,
         password: form.password,
         registerSecret: form.registerSecret,
       });
 
       toast.success("Register berhasil, silakan login");
-
       setTimeout(() => {
         window.location.href = ADMIN_LOGIN_PATH;
       }, 700);
     } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          "Register gagal"
-      );
+      toast.error(error.response?.data?.message || "Register gagal");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-950 to-black text-white flex items-center justify-center overflow-hidden">
-      <div className="w-full max-w-[420px] bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl animate-[fadeIn_0.4s_ease-in-out] sm:p-8">
-        <h1 className="text-3xl font-bold mb-2 text-center">
-          Register Admin
-        </h1>
+    <div className="admin-theme flex min-h-screen items-center justify-center overflow-hidden bg-[#0f0d0a] px-4 py-8 text-white">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(213,167,86,.16),transparent_32%),linear-gradient(135deg,#0f0d0a,#050403)]" />
+      <div className="relative w-full max-w-lg rounded-2xl border border-[#d5a756]/20 bg-[#17130f]/95 p-6 shadow-2xl shadow-black/50 sm:p-8">
+        <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-[#d5a756]/25 bg-black">
+          <img src="/favicon.png" alt="DALPREMIUM" className="h-full w-full object-contain p-1" />
+        </div>
 
-        <p className="text-zinc-400 mb-6 text-center">
-          Buat akun admin baru
+        <h1 className="text-center text-3xl font-black text-[#d5a756]">Daftar Admin</h1>
+        <p className="mb-6 mt-2 text-center text-sm text-zinc-400">
+          Buat akun pengelola baru dengan kode register yang valid.
         </p>
 
-        <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <input
             type="text"
             name="name"
             placeholder="Nama"
             value={form.name}
             onChange={handleChange}
-            className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl p-3 outline-none focus:border-indigo-500 transition"
+            className="h-12 rounded-lg border border-[#d5a756]/15 bg-black/30 px-4 outline-none transition placeholder:text-zinc-500 focus:border-[#d5a756] sm:col-span-2"
           />
-
           <input
             type="email"
             name="email"
             placeholder="Email"
             value={form.email}
             onChange={handleChange}
-            className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl p-3 outline-none focus:border-indigo-500 transition"
+            className="h-12 rounded-lg border border-[#d5a756]/15 bg-black/30 px-4 outline-none transition placeholder:text-zinc-500 focus:border-[#d5a756]"
           />
-
           <input
             type="text"
             name="phone"
-            placeholder="Nomor HP"
+            placeholder="Nomor HP (opsional)"
             value={form.phone}
             onChange={handleChange}
-            className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl p-3 outline-none focus:border-indigo-500 transition"
+            className="h-12 rounded-lg border border-[#d5a756]/15 bg-black/30 px-4 outline-none transition placeholder:text-zinc-500 focus:border-[#d5a756]"
           />
 
-          <textarea
-            name="address"
-            placeholder="Alamat lengkap"
-            value={form.address}
+          <PasswordField
+            name="password"
+            placeholder="Password"
+            value={form.password}
+            visible={showPassword}
+            onToggle={() => setShowPassword(!showPassword)}
             onChange={handleChange}
-            className="w-full h-24 bg-zinc-900/80 border border-zinc-700 rounded-xl p-3 outline-none focus:border-indigo-500 transition"
           />
-
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={handleChange}
-              className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl p-3 pr-12 outline-none focus:border-indigo-500 transition"
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
-            >
-              {showPassword ? "🙈" : "👁"}
-            </button>
-          </div>
+          <PasswordField
+            name="confirmPassword"
+            placeholder="Konfirmasi Password"
+            value={form.confirmPassword}
+            visible={showConfirmPassword}
+            onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+            onChange={handleChange}
+          />
 
           {passwordStrength && (
-            <p className="text-sm text-zinc-400">
-              Strength: {passwordStrength}
+            <p className="text-sm font-semibold text-zinc-400 sm:col-span-2">
+              Kekuatan password:{" "}
+              <span className="text-[#f0cf87]">{passwordStrength}</span>
             </p>
           )}
 
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              value={form.confirmPassword}
-              onChange={handleChange}
-              className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl p-3 pr-12 outline-none focus:border-indigo-500 transition"
-            />
-
-            <button
-              type="button"
-              onClick={() =>
-                setShowConfirmPassword(!showConfirmPassword)
-              }
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
-            >
-              {showConfirmPassword ? "🙈" : "👁"}
-            </button>
-          </div>
-
-          <div className="relative">
+          <div className="relative sm:col-span-2">
             <input
               type={showKey ? "text" : "password"}
               name="registerSecret"
-              placeholder="Register Key"
+              placeholder="Kode register admin"
               value={form.registerSecret}
               onChange={handleChange}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
                   register();
                 }
               }}
-              className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl p-3 pr-12 outline-none focus:border-indigo-500 transition"
+              className="h-12 w-full rounded-lg border border-[#d5a756]/15 bg-black/30 px-4 pr-20 outline-none transition placeholder:text-zinc-500 focus:border-[#d5a756]"
             />
-
             <button
               type="button"
               onClick={() => setShowKey(!showKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#f0cf87] hover:text-white"
             >
-              {showKey ? "🙈" : "👁"}
+              {showKey ? "Sembunyi" : "Lihat"}
             </button>
           </div>
 
           <button
+            type="button"
             onClick={register}
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 transition py-3 rounded-xl"
+            className="h-12 rounded-lg bg-[#d5a756] font-black text-[#14100b] transition hover:bg-[#f0cf87] disabled:opacity-50 sm:col-span-2"
           >
-            {loading ? "Loading..." : "Register"}
+            {loading ? "Memproses..." : "Daftar Admin"}
           </button>
 
-          <p className="text-center text-sm text-zinc-400">
+          <p className="text-center text-sm text-zinc-400 sm:col-span-2">
             Sudah punya akun?{" "}
-            <span
+            <button
+              type="button"
               onClick={() => {
                 window.location.href = ADMIN_LOGIN_PATH;
               }}
-              className="text-indigo-400 hover:text-indigo-300 cursor-pointer"
+              className="font-black text-[#f0cf87] hover:text-white"
             >
-              Login
-            </span>
+              Masuk
+            </button>
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PasswordField({
+  name,
+  placeholder,
+  value,
+  visible,
+  onToggle,
+  onChange,
+}) {
+  return (
+    <div className="relative">
+      <input
+        type={visible ? "text" : "password"}
+        name={name}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        className="h-12 w-full rounded-lg border border-[#d5a756]/15 bg-black/30 px-4 pr-20 outline-none transition placeholder:text-zinc-500 focus:border-[#d5a756]"
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#f0cf87] hover:text-white"
+      >
+        {visible ? "Sembunyi" : "Lihat"}
+      </button>
     </div>
   );
 }
