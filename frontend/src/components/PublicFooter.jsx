@@ -1,12 +1,18 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../services/api";
-import { assetUrl as imageUrl } from "../utils/url";
+import {
+  assetUrl as imageUrl,
+  optimizedImageUrl,
+} from "../utils/url";
 import { getCachedLogo } from "../utils/branding";
 
 export default function PublicFooter({ logo, settings, paymentLogos = [] }) {
   const [loadedPaymentLogos, setLoadedPaymentLogos] = useState([]);
-  const displayLogo = logo ? imageUrl(logo) : getCachedLogo();
+  const displayLogo = optimizedImageUrl(
+    logo ? imageUrl(logo) : getCachedLogo(),
+    { width: 112, crop: "limit" }
+  );
   const description =
     settings?.footerDescription ||
     "Langganan aplikasi premium murah, aman, cepat, dan terpercaya.";
@@ -43,6 +49,8 @@ export default function PublicFooter({ logo, settings, paymentLogos = [] }) {
                 <img
                   src={displayLogo}
                   alt="DALPREMIUM"
+                  loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-contain p-1"
                 />
               ) : (
@@ -94,8 +102,13 @@ export default function PublicFooter({ logo, settings, paymentLogos = [] }) {
                   title={item.title || "Metode pembayaran"}
                 >
                   <img
-                    src={imageUrl(item.image)}
+                    src={optimizedImageUrl(item.image, {
+                      width: 180,
+                      crop: "limit",
+                    })}
                     alt={item.title || "Metode pembayaran"}
+                    loading="lazy"
+                    decoding="async"
                     className="h-10 w-full object-contain transition duration-500 hover:scale-105"
                   />
                 </div>
@@ -103,8 +116,13 @@ export default function PublicFooter({ logo, settings, paymentLogos = [] }) {
             </div>
           ) : settings?.footerPaymentImage ? (
             <img
-              src={imageUrl(settings.footerPaymentImage)}
+              src={optimizedImageUrl(settings.footerPaymentImage, {
+                width: 420,
+                crop: "limit",
+              })}
               alt="Metode pembayaran"
+              loading="lazy"
+              decoding="async"
               className="mt-4 max-h-32 rounded-lg border border-white/10 bg-white object-contain p-3 transition hover:-translate-y-0.5 hover:border-[#d5a756]"
             />
           ) : (

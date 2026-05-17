@@ -157,6 +157,11 @@ body:not(:has(.admin-theme)) img:hover {
   animation: bannerFade 0.65s ease both;
 }
 
+.shop-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 720px;
+}
+
 @media (max-width: 767px) {
   .admin-theme .grid.grid-cols-5 {
     grid-template-columns: repeat(1, minmax(0, 1fr)) !important;

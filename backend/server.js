@@ -4067,6 +4067,198 @@ const createSlug = (value = "") =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 
+const calculateProductStock = async (product) => {
+  if (
+    product.deliveryType === "ACCOUNT" &&
+    !isSharedAccountProduct(product)
+  ) {
+    return prisma.emailAccount.count({
+      where: {
+        serviceName: product.name,
+        duration: product.duration,
+        plan: product.plan,
+        status: {
+          notIn: ["TERJUAL", "ERROR"],
+        },
+      },
+    });
+  }
+
+  if (
+    isSharedAccountProduct(product) ||
+    product.deliveryType === "INVITE"
+  ) {
+    const accounts = await prisma.emailAccount.findMany({
+      where: {
+        serviceName: product.name,
+        duration: product.duration,
+        plan: product.plan,
+        status: {
+          not: "ERROR",
+        },
+      },
+      select: {
+        familySlot: true,
+        invites: {
+          select: {
+            status: true,
+          },
+        },
+      },
+    });
+
+    return accounts.reduce((stock, account) => {
+      const usedSlot = account.invites.filter((invite) =>
+        ["PENDING", "ACCEPTED"].includes(invite.status)
+      ).length;
+
+      return stock + Math.max(account.familySlot - usedSlot, 0);
+    }, 0);
+  }
+
+  return 0;
+};
+
+const buildProductsWithStock = async (products) =>
+  Promise.all(
+    products.map(async (product) => ({
+      ...product,
+      stock: await calculateProductStock(product),
+    }))
+  );
+
+app.get("/api/shop", async (req, res) => {
+  try {
+    const [
+      settings,
+      banners,
+      testimonials,
+      faqs,
+      footerPaymentLogos,
+      products,
+    ] = await Promise.all([
+      prisma.setting.findFirst(),
+      prisma.banner.findMany({
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+          image: true,
+          sortOrder: true,
+        },
+        orderBy: [
+          { sortOrder: "asc" },
+          { createdAt: "desc" },
+        ],
+      }),
+      prisma.testimonialImage.findMany({
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+          image: true,
+          sortOrder: true,
+        },
+        orderBy: [
+          { sortOrder: "asc" },
+          { createdAt: "desc" },
+        ],
+      }),
+      prisma.faq.findMany({
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+          questionId: true,
+          answerId: true,
+          questionEn: true,
+          answerEn: true,
+          sortOrder: true,
+        },
+        orderBy: [
+          { sortOrder: "asc" },
+          { createdAt: "asc" },
+        ],
+      }),
+      prisma.footerPaymentLogo.findMany({
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+          title: true,
+          image: true,
+          sortOrder: true,
+        },
+        orderBy: [
+          { sortOrder: "asc" },
+          { createdAt: "desc" },
+        ],
+      }),
+      prisma.product.findMany({
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          image: true,
+          price: true,
+          duration: true,
+          plan: true,
+          deliveryType: true,
+          isActive: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+    ]);
+
+    const productsWithStock = await buildProductsWithStock(products);
+
+    res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
+    res.json({
+      products: productsWithStock,
+      content: {
+        settings: settings
+          ? {
+              appName: settings.appName,
+              logo: settings.logo,
+              currency: settings.currency,
+              timezone: settings.timezone,
+              paymentGatewayEnabled: isPaymentGatewayReady(settings),
+              waGatewaySender: settings.waGatewaySender,
+              footerDescription: settings.footerDescription,
+              footerEmail: settings.footerEmail,
+              footerPhone: settings.footerPhone,
+              footerWhatsapp: settings.footerWhatsapp,
+              footerAddress: settings.footerAddress,
+              footerPaymentImage: settings.footerPaymentImage,
+            }
+          : null,
+        banners,
+        testimonials,
+        faqs,
+        footerPaymentLogos,
+      },
+    });
+  } catch (error) {
+    sendServerError(res, error);
+  }
+});
+
 app.get("/api/product-categories", async (req, res) => {
   try {
     const categories = await prisma.productCategory.findMany({
@@ -4188,96 +4380,7 @@ const products =
     },
   });
 
-const productsWithStock =
-  await Promise.all(
-    products.map(async (product) => {
-      let stock = 0;
-
-      if (
-        product.deliveryType === "ACCOUNT" &&
-        !isSharedAccountProduct(product)
-      ) {
-        stock =
-          await prisma.emailAccount.count({
-            where: {
-              serviceName: product.name,
-              duration: product.duration,
-              plan: product.plan,
-              status: {
-                notIn: [
-                  "TERJUAL",
-                  "ERROR",
-                ],
-              },
-            },
-          });
-      }
-
-      if (isSharedAccountProduct(product)) {
-        const accounts =
-          await prisma.emailAccount.findMany({
-            where: {
-              serviceName: product.name,
-              duration: product.duration,
-              plan: product.plan,
-              status: {
-                not: "ERROR",
-              },
-            },
-            include: {
-              invites: true,
-            },
-          });
-
-        accounts.forEach((account) => {
-          const usedSlot =
-            account.invites.filter((invite) =>
-              ["PENDING", "ACCEPTED"].includes(
-                invite.status
-              )
-            ).length;
-
-          stock += account.familySlot - usedSlot;
-        });
-      }
-
-      if (
-        product.deliveryType === "INVITE"
-      ) {
-        const accounts =
-          await prisma.emailAccount.findMany({
-            where: {
-              serviceName: product.name,
-              duration: product.duration,
-              plan: product.plan,
-              status: {
-                not: "ERROR",
-              },
-            },
-            include: {
-              invites: true,
-            },
-          });
-
-        accounts.forEach((account) => {
-          const usedSlot =
-            account.invites.filter((invite) =>
-              ["PENDING", "ACCEPTED"].includes(
-                invite.status
-              )
-            ).length;
-
-          stock +=
-            account.familySlot - usedSlot;
-        });
-      }
-
-      return {
-        ...product,
-        stock,
-      };
-    })
-  );
+const productsWithStock = await buildProductsWithStock(products);
 
 res.json(productsWithStock);
   } catch (error) {

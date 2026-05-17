@@ -5,7 +5,10 @@ import {
   CUSTOMER_LOGIN_PATH,
   CUSTOMER_REGISTER_PATH,
 } from "../config/routes";
-import { assetUrl as imageUrl } from "../utils/url";
+import {
+  assetUrl as imageUrl,
+  optimizedImageUrl,
+} from "../utils/url";
 import api from "../services/api";
 import {
   clearCachedLogo,
@@ -228,7 +231,9 @@ export default function PublicTopBar({
     };
   }, [logo]);
 
-  const displayLogo = logo ? imageUrl(logo) : remoteLogo;
+  const displayLogo = logo
+    ? optimizedImageUrl(logo, { width: 112, crop: "limit" })
+    : optimizedImageUrl(remoteLogo, { width: 112, crop: "limit" });
   const language = (controlledLanguage || localLanguage || "id").toLowerCase();
   const copy = navCopy[language] || navCopy.id;
 
@@ -354,6 +359,8 @@ export default function PublicTopBar({
             <img
               src={displayLogo}
               alt="DALPREMIUM"
+              loading="eager"
+              decoding="async"
               className="h-full w-full object-contain p-1"
             />
           ) : (
@@ -426,8 +433,13 @@ export default function PublicTopBar({
                 <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-[#d5a756]/30 bg-[#d5a756]/15 text-[#d5a756] sm:h-10 sm:w-10">
                   {customerUser.avatar ? (
                     <img
-                      src={imageUrl(customerUser.avatar)}
+                      src={optimizedImageUrl(customerUser.avatar, {
+                        width: 96,
+                        height: 96,
+                      })}
                       alt={customerUser.name}
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover"
                     />
                   ) : (

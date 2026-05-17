@@ -4,7 +4,10 @@ import api from "../services/api";
 import PublicTopBar from "../components/PublicTopBar";
 import PublicFooter from "../components/PublicFooter";
 import WhatsAppWidget from "../components/WhatsAppWidget";
-import { assetUrl as imageUrl } from "../utils/url";
+import {
+  assetUrl as imageUrl,
+  optimizedImageUrl,
+} from "../utils/url";
 
 const copy = {
   id: {
@@ -33,6 +36,8 @@ const copy = {
     choose: "Beli",
     noProductTitle: "Produk belum ketemu",
     noProductDesc: "Coba filter lain atau tambahkan produk dari halaman admin.",
+    showMoreProducts: "Tampilkan Lagi",
+    showLessProducts: "Tampilkan Lebih Sedikit",
     howTitle: "Cara Pesan",
     howSubtitle: "Cara praktis berlangganan layanan premium di Dalpremium",
     order: "Pesan Layanan",
@@ -72,6 +77,8 @@ const copy = {
     choose: "Buy",
     noProductTitle: "No product found",
     noProductDesc: "Try another filter or add products from admin panel.",
+    showMoreProducts: "Show More",
+    showLessProducts: "Show Less",
     howTitle: "How to Order",
     howSubtitle: "A practical way to subscribe to premium services at Dalpremium",
     order: "Order Service",
@@ -112,6 +119,17 @@ const billingLabel = (durations) => {
 
   return "/bulan";
 };
+
+const imageSrcSet = (path, widths, options = {}) =>
+  widths
+    .map(
+      (width) =>
+        `${optimizedImageUrl(path, {
+          ...options,
+          width,
+        })} ${width}w`
+    )
+    .join(", ");
 
 function Icon({ name, className = "h-5 w-5" }) {
   const paths = {
@@ -280,6 +298,7 @@ export default function Shop() {
   );
   const [serviceFilter, setServiceFilter] = useState("ALL");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [visibleProductLimit, setVisibleProductLimit] = useState(12);
 
   useEffect(() => {
     let isMounted = true;
@@ -287,17 +306,33 @@ export default function Shop() {
     const fetchShopData = async () => {
       try {
         setLoading(true);
-        const [productsResponse, contentResponse] =
-          await Promise.all([
-            api.get("/products"),
-            api.get("/content"),
-          ]);
+        let productsData = [];
+        let contentData = {};
+
+        try {
+          const response = await api.get("/shop");
+          productsData = response.data.products || [];
+          contentData = response.data.content || {};
+        } catch (error) {
+          if (error.response?.status !== 404) {
+            throw error;
+          }
+
+          const [productsResponse, contentResponse] =
+            await Promise.all([
+              api.get("/products"),
+              api.get("/content"),
+            ]);
+
+          productsData = productsResponse.data.filter(
+            (item) => item.isActive
+          );
+          contentData = contentResponse.data;
+        }
 
         if (isMounted) {
-          setProducts(
-            productsResponse.data.filter((item) => item.isActive)
-          );
-          setContent(contentResponse.data);
+          setProducts(productsData);
+          setContent(contentData);
         }
       } catch {
         if (isMounted) {
@@ -481,9 +516,25 @@ export default function Shop() {
     });
   }, [productGroups, query, serviceFilter, categoryFilter]);
 
+  const visibleGroups = useMemo(
+    () => filteredGroups.slice(0, visibleProductLimit),
+    [filteredGroups, visibleProductLimit]
+  );
+
+  useEffect(() => {
+    setVisibleProductLimit(12);
+  }, [query, serviceFilter, categoryFilter]);
+
   const carouselSlides = useMemo(() => {
     return content.banners.map((banner) => ({
-      image: imageUrl(banner.image),
+      id: banner.id,
+      image: optimizedImageUrl(banner.image, {
+        width: 1440,
+        crop: "limit",
+      }),
+      srcSet: imageSrcSet(banner.image, [640, 960, 1440], {
+        crop: "limit",
+      }),
     }));
   }, [content.banners]);
 
@@ -554,7 +605,11 @@ export default function Shop() {
                   <img
                     key={activeBanner.image}
                     src={activeBanner.image}
+                    srcSet={activeBanner.srcSet}
+                    sizes="(max-width: 640px) 92vw, 80vw"
                     alt="Banner DALPREMIUM"
+                    fetchPriority="high"
+                    decoding="async"
                     className="banner-fade absolute inset-0 h-full w-full object-contain opacity-90 sm:object-cover sm:opacity-80"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-black/10" />
@@ -597,7 +652,7 @@ export default function Shop() {
           </section>
         )}
 
-        <section id="produk" className="scroll-mt-32">
+        <section id="produk" className="shop-section scroll-mt-32">
           <div className="mb-5 text-center">
             <div>
               <h2 className="text-2xl font-black text-[#d5a756] sm:text-3xl">
@@ -652,7 +707,7 @@ export default function Shop() {
             </div>
           ) : (
             <div className="grid auto-cols-[78%] grid-flow-col gap-4 overflow-x-auto pb-3 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3 xl:grid-cols-4">
-              {filteredGroups.map((group) => {
+              {visibleGroups.map((group) => {
                 const inStock = group.stock > 0;
 
                 return (
@@ -662,7 +717,22 @@ export default function Shop() {
                   >
                     <div className="relative aspect-[16/10] overflow-hidden bg-black">
                       {group.image ? (
-                        <img src={imageUrl(group.image)} alt={group.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                        <img
+                          src={optimizedImageUrl(group.image, {
+                            width: 520,
+                            crop: "limit",
+                          })}
+                          srcSet={imageSrcSet(
+                            group.image,
+                            [320, 520, 720],
+                            { crop: "limit" }
+                          )}
+                          sizes="(max-width: 640px) 78vw, (max-width: 1024px) 45vw, 25vw"
+                          alt={group.name}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,rgba(213,167,86,.35),transparent_34%),linear-gradient(135deg,#211915,#0d0b09)]">
                           <span className="text-7xl font-black text-[#d5a756]">{group.name?.charAt(0)}</span>
@@ -727,9 +797,29 @@ export default function Shop() {
               )}
             </div>
           )}
+
+          {!loading && filteredGroups.length > 12 && (
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() =>
+                  setVisibleProductLimit((current) =>
+                    current >= filteredGroups.length
+                      ? 12
+                      : Math.min(current + 12, filteredGroups.length)
+                  )
+                }
+                className="rounded-lg border border-[#d5a756]/25 px-5 py-3 text-sm font-black text-[#f0cf87] transition hover:bg-[#d5a756]/10"
+              >
+                {visibleProductLimit >= filteredGroups.length
+                  ? t.showLessProducts
+                  : t.showMoreProducts}
+              </button>
+            </div>
+          )}
         </section>
 
-        <section id="cara-pesan" className="mt-12 scroll-mt-32 rounded-2xl border border-[#d5a756]/15 bg-[#17130f] px-4 py-7 text-white sm:px-7">
+        <section id="cara-pesan" className="shop-section mt-12 scroll-mt-32 rounded-2xl border border-[#d5a756]/15 bg-[#17130f] px-4 py-7 text-white sm:px-7">
           <div className="mb-5 text-center">
             <h2 className="text-2xl font-black text-[#d5a756] sm:text-3xl">{t.howTitle}</h2>
             <p className="mt-2 text-sm font-semibold text-zinc-400">{t.howSubtitle}</p>
@@ -752,7 +842,7 @@ export default function Shop() {
           </div>
         </section>
 
-        <section id="testimoni" className="mt-12 scroll-mt-32">
+        <section id="testimoni" className="shop-section mt-12 scroll-mt-32">
           <div className="text-center">
             <h2 className="text-2xl font-black text-[#d5a756] sm:text-3xl">{t.testimonialTitle}</h2>
             <p className="mt-2 text-sm font-semibold text-zinc-400">{t.testimonialSubtitle}</p>
@@ -764,8 +854,17 @@ export default function Shop() {
                 className="overflow-hidden rounded-xl border border-[#d5a756]/15 bg-[#17130f]"
               >
                 <img
-                  src={imageUrl(item.image)}
+                  src={optimizedImageUrl(item.image, {
+                    width: 520,
+                    crop: "limit",
+                  })}
+                  srcSet={imageSrcSet(item.image, [320, 520, 760], {
+                    crop: "limit",
+                  })}
+                  sizes="(max-width: 640px) 82vw, (max-width: 1024px) 45vw, 33vw"
                   alt={t.testimonialTitle}
+                  loading="lazy"
+                  decoding="async"
                   className="h-56 w-full object-cover transition duration-500 hover:scale-105"
                 />
               </div>
@@ -789,7 +888,7 @@ export default function Shop() {
           )}
         </section>
 
-        <section id="faq" className="mt-12 scroll-mt-32">
+        <section id="faq" className="shop-section mt-12 scroll-mt-32">
           <div className="text-center">
             <h2 className="text-2xl font-black text-[#d5a756] sm:text-3xl">{t.faqTitle}</h2>
             <p className="mt-2 text-sm font-semibold text-zinc-400">{t.faqSubtitle}</p>

@@ -20,3 +20,37 @@ export const assetUrl = (path) => {
 
   return `${API_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
 };
+
+const isCloudinaryUrl = (url = "") =>
+  /^https:\/\/res\.cloudinary\.com\/.+\/upload\//.test(url);
+
+export const optimizedImageUrl = (
+  path,
+  {
+    width,
+    height,
+    crop = "fill",
+    quality = "auto",
+    format = "auto",
+  } = {}
+) => {
+  const url = assetUrl(path);
+
+  if (!url || !isCloudinaryUrl(url)) {
+    return url;
+  }
+
+  const transforms = [
+    format ? `f_${format}` : "",
+    quality ? `q_${quality}` : "",
+    width ? `w_${width}` : "",
+    height ? `h_${height}` : "",
+    crop && width ? `c_${crop}` : "",
+  ].filter(Boolean);
+
+  if (transforms.length === 0 || url.includes("/upload/f_")) {
+    return url;
+  }
+
+  return url.replace("/upload/", `/upload/${transforms.join(",")}/`);
+};
