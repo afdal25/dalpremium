@@ -153,6 +153,72 @@ const fetchJson = async (path) => {
   return response.json();
 };
 
+const SHOP_CACHE_KEY = "dalpremiumShopPayload";
+const SHOP_CACHE_TTL = 1000 * 60 * 10;
+const emptyShopContent = {
+  banners: [],
+  testimonials: [],
+  faqs: [],
+  footerPaymentLogos: [],
+};
+
+const getCachedShop = () => {
+  try {
+    const cached = JSON.parse(localStorage.getItem(SHOP_CACHE_KEY));
+
+    if (!cached || Date.now() - cached.savedAt > SHOP_CACHE_TTL) {
+      return null;
+    }
+
+    return cached.payload;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedShop = (payload) => {
+  try {
+    localStorage.setItem(
+      SHOP_CACHE_KEY,
+      JSON.stringify({
+        savedAt: Date.now(),
+        payload,
+      })
+    );
+  } catch {
+    // Browser storage can be unavailable in private modes.
+  }
+};
+
+const preloadProductImage = (path) => {
+  if (!path || typeof document === "undefined") {
+    return;
+  }
+
+  const href = optimizedImageUrl(path, {
+    width: 360,
+    crop: "limit",
+    quality: "auto:eco",
+  });
+
+  if (!href || document.querySelector(`link[href="${href}"]`)) {
+    return;
+  }
+
+  const link = document.createElement("link");
+  link.rel = "preload";
+  link.as = "image";
+  link.href = href;
+  link.imageSrcset = imageSrcSet(path, [240, 320, 360], {
+    crop: "limit",
+    quality: "auto:eco",
+  });
+  link.imageSizes =
+    "(max-width: 640px) 78vw, (max-width: 1024px) 45vw, 25vw";
+  link.fetchPriority = "high";
+  document.head.appendChild(link);
+};
+
 function Icon({ name, className = "h-5 w-5" }) {
   const paths = {
     bag: (
@@ -303,15 +369,15 @@ function StepIllustration({ type }) {
 }
 
 export default function Shop() {
-  const [products, setProducts] = useState([]);
-  const [content, setContent] = useState({
-    banners: [],
-    testimonials: [],
-    faqs: [],
-    footerPaymentLogos: [],
-  });
+  const cachedShop = useMemo(getCachedShop, []);
+  const [products, setProducts] = useState(
+    cachedShop?.products || []
+  );
+  const [content, setContent] = useState(
+    cachedShop?.content || emptyShopContent
+  );
   const [showAllTestimonials, setShowAllTestimonials] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cachedShop);
   const [query, setQuery] = useState("");
   const [activeNav, setActiveNav] = useState("Produk");
   const [activeSlide, setActiveSlide] = useState(0);
@@ -333,7 +399,14 @@ export default function Shop() {
 
     const fetchShopData = async () => {
       try {
-        setLoading(true);
+        if (cachedShop) {
+          preloadProductImage(
+            cachedShop.products?.find((product) => product.image)?.image
+          );
+        } else {
+          setLoading(true);
+        }
+
         let productsData = [];
         let contentData = {};
 
@@ -359,18 +432,20 @@ export default function Shop() {
         }
 
         if (isMounted) {
+          preloadProductImage(
+            productsData.find((product) => product.image)?.image
+          );
           setProducts(productsData);
           setContent(contentData);
+          setCachedShop({
+            products: productsData,
+            content: contentData,
+          });
         }
       } catch {
-        if (isMounted) {
+        if (isMounted && !cachedShop) {
           setProducts([]);
-          setContent({
-            banners: [],
-            testimonials: [],
-            faqs: [],
-            footerPaymentLogos: [],
-          });
+          setContent(emptyShopContent);
         }
       } finally {
         if (isMounted) {
@@ -384,7 +459,7 @@ export default function Shop() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [cachedShop]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -752,8 +827,9 @@ export default function Shop() {
             </div>
           ) : (
             <div className="grid auto-cols-[78%] grid-flow-col gap-4 overflow-x-auto pb-3 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3 xl:grid-cols-4">
-              {visibleGroups.map((group) => {
+              {visibleGroups.map((group, index) => {
                 const inStock = group.stock > 0;
+                const prioritizeImage = index === 0;
 
                 return (
                   <article
@@ -764,19 +840,27 @@ export default function Shop() {
                       {group.image ? (
                         <img
                           src={optimizedImageUrl(group.image, {
-                            width: 520,
+                            width: prioritizeImage ? 360 : 480,
                             crop: "limit",
                             quality: "auto:eco",
                           })}
                           srcSet={imageSrcSet(
                             group.image,
-                            [320, 520, 720],
-                            { crop: "limit", quality: "auto:eco" }
+                            prioritizeImage
+                              ? [240, 320, 360]
+                              : [240, 320, 480],
+                            {
+                              crop: "limit",
+                              quality: "auto:eco",
+                            }
                           )}
                           sizes="(max-width: 640px) 78vw, (max-width: 1024px) 45vw, 25vw"
                           alt={group.name}
-                          loading="lazy"
+                          loading={prioritizeImage ? "eager" : "lazy"}
+                          fetchPriority={prioritizeImage ? "high" : "auto"}
                           decoding="async"
+                          width="360"
+                          height="225"
                           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                         />
                       ) : (
