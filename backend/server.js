@@ -13,6 +13,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const sanitizeHtml = require("sanitize-html");
 const Joi = require("joi");
+const cloudinary = require("cloudinary").v2;
 
 const prisma = require("./prisma");
 
@@ -23,6 +24,11 @@ const UPLOAD_DIR = path.join(__dirname, "uploads");
 const JWT_ISSUER = process.env.JWT_ISSUER || "dalpremium-api";
 const JWT_AUDIENCE = process.env.JWT_AUDIENCE || "dalpremium-web";
 const JWT_SECRET = process.env.JWT_SECRET;
+const cloudinaryEnabled = Boolean(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET
+);
 const weakJwtSecrets = new Set([
   "",
   "secret",
@@ -40,6 +46,15 @@ if (!JWT_SECRET || JWT_SECRET.length < 32 || weakJwtSecrets.has(JWT_SECRET)) {
   }
 
   console.warn(`[security] ${message}`);
+}
+
+if (cloudinaryEnabled) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
 }
 
 app.disable("x-powered-by");
@@ -158,7 +173,7 @@ const allowedUploadExtensions = new Set([
   ".gif",
 ]);
 
-const storage = multer.diskStorage({
+const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, UPLOAD_DIR);
   },
@@ -171,8 +186,12 @@ const storage = multer.diskStorage({
   },
 });
 
+const uploadStorage = cloudinaryEnabled
+  ? multer.memoryStorage()
+  : diskStorage;
+
 const upload = multer({
-  storage,
+  storage: uploadStorage,
   limits: {
     fileSize: 5 * 1024 * 1024,
     files: 3,
@@ -194,6 +213,54 @@ const upload = multer({
     );
   },
 });
+
+const uploadToCloudinary = (file, folder) =>
+  new Promise((resolve, reject) => {
+    if (!file?.buffer) {
+      return reject(new Error("File upload tidak valid"));
+    }
+
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: "image",
+        use_filename: false,
+        unique_filename: true,
+        overwrite: false,
+      },
+      (error, result) => {
+        if (error) {
+          return reject(error);
+        }
+
+        return resolve(result.secure_url);
+      }
+    );
+
+    stream.end(file.buffer);
+  });
+
+const storeUploadedFile = async (file, folder = "dalpremium/uploads") => {
+  if (!file) {
+    return null;
+  }
+
+  if (cloudinaryEnabled) {
+    return uploadToCloudinary(file, folder);
+  }
+
+  return `/uploads/${file.filename}`;
+};
+
+const toAbsoluteAssetUrl = (req, value) => {
+  if (!value || /^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  return `${req.protocol}://${req.get("host")}${
+    value.startsWith("/") ? value : `/${value}`
+  }`;
+};
 
 const cleanString = (value, maxLength = 255) => {
   if (value === undefined || value === null) {
@@ -1279,7 +1346,10 @@ app.put(
       };
 
       if (req.file) {
-        data.avatar = `/uploads/${req.file.filename}`;
+        data.avatar = await storeUploadedFile(
+          req.file,
+          "dalpremium/avatars"
+        );
       }
 
       const user = await prisma.user.update({
@@ -3069,7 +3139,10 @@ app.put(
             id: settings.id,
           },
           data: {
-            logo: `/uploads/${req.file.filename}`,
+            logo: await storeUploadedFile(
+              req.file,
+              "dalpremium/site"
+            ),
           },
         });
 
@@ -3112,7 +3185,10 @@ app.put(
             id: settings.id,
           },
           data: {
-            footerPaymentImage: `/uploads/${req.file.filename}`,
+            footerPaymentImage: await storeUploadedFile(
+              req.file,
+              "dalpremium/footer"
+            ),
           },
         });
 
@@ -3146,7 +3222,10 @@ app.post(
 
       const logo = await prisma.footerPaymentLogo.create({
         data: {
-          image: `/uploads/${req.file.filename}`,
+          image: await storeUploadedFile(
+            req.file,
+            "dalpremium/footer"
+          ),
           title: req.body.title || null,
           sortOrder: Number(req.body.sortOrder || 0),
         },
@@ -3372,7 +3451,10 @@ app.post(
 
       const banner = await prisma.banner.create({
         data: {
-          image: `/uploads/${req.file.filename}`,
+          image: await storeUploadedFile(
+            req.file,
+            "dalpremium/banners"
+          ),
           sortOrder: Number(req.body.sortOrder || 0),
         },
       });
@@ -3428,7 +3510,10 @@ app.post(
       const testimonial =
         await prisma.testimonialImage.create({
           data: {
-            image: `/uploads/${req.file.filename}`,
+            image: await storeUploadedFile(
+              req.file,
+              "dalpremium/testimonials"
+            ),
             sortOrder: Number(req.body.sortOrder || 0),
           },
         });
@@ -3598,7 +3683,12 @@ app.post(
           slug: createSlug(title),
           excerpt: cleanText(excerpt, 1000) || null,
           content: cleanText(content, 20000),
-          image: req.file ? `/uploads/${req.file.filename}` : null,
+          image: req.file
+            ? await storeUploadedFile(
+                req.file,
+                "dalpremium/articles"
+              )
+            : null,
           isActive: isActive !== "false",
         },
       });
@@ -3630,7 +3720,10 @@ app.put(
       };
 
       if (req.file) {
-        data.image = `/uploads/${req.file.filename}`;
+        data.image = await storeUploadedFile(
+          req.file,
+          "dalpremium/articles"
+        );
       }
 
       const article = await prisma.article.update({
@@ -3817,10 +3910,16 @@ app.post(
           data: {
             name: cleanString(name, 120),
             logo: req.files?.logo?.[0]
-              ? `/uploads/${req.files.logo[0].filename}`
+              ? await storeUploadedFile(
+                  req.files.logo[0],
+                  "dalpremium/payment-methods"
+                )
               : null,
             qrisImage: req.files?.qrisImage?.[0]
-              ? `/uploads/${req.files.qrisImage[0].filename}`
+              ? await storeUploadedFile(
+                  req.files.qrisImage[0],
+                  "dalpremium/payment-methods"
+                )
               : null,
             accountNumber: cleanString(accountNumber, 120),
             accountName: cleanString(accountName, 120),
@@ -3864,11 +3963,17 @@ app.put(
       };
 
       if (req.files?.logo?.[0]) {
-        data.logo = `/uploads/${req.files.logo[0].filename}`;
+        data.logo = await storeUploadedFile(
+          req.files.logo[0],
+          "dalpremium/payment-methods"
+        );
       }
 
       if (req.files?.qrisImage?.[0]) {
-        data.qrisImage = `/uploads/${req.files.qrisImage[0].filename}`;
+        data.qrisImage = await storeUploadedFile(
+          req.files.qrisImage[0],
+          "dalpremium/payment-methods"
+        );
       }
 
       const method = await prisma.paymentMethod.update({
@@ -4193,7 +4298,10 @@ app.post(
             plan: safePlan,
             description: cleanText(description, 1000) || null,
             image: req.file
-              ? `/uploads/${req.file.filename}`
+              ? await storeUploadedFile(
+                  req.file,
+                  "dalpremium/products"
+                )
               : cleanUrl(image),
             deliveryType: safeDeliveryType,
             categoryId: categoryId ? Number(categoryId) : null,
@@ -4297,7 +4405,10 @@ app.put(
             plan: safePlan,
             description: cleanText(description, 1000) || null,
             image: req.file
-              ? `/uploads/${req.file.filename}`
+              ? await storeUploadedFile(
+                  req.file,
+                  "dalpremium/products"
+                )
               : cleanUrl(image),
             deliveryType: safeDeliveryType,
             categoryId: categoryId ? Number(categoryId) : null,
@@ -4646,9 +4757,13 @@ app.put(
         });
       }
 
-      const imageUrl = `${req.protocol}://${req.get(
-        "host"
-      )}/uploads/${req.file.filename}`;
+      const imageUrl = toAbsoluteAssetUrl(
+        req,
+        await storeUploadedFile(
+          req.file,
+          "dalpremium/payment-proofs"
+        )
+      );
 
       const existingOrder = await prisma.order.findFirst({
         where: {
