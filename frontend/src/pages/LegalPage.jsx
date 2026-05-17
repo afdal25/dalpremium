@@ -55,11 +55,14 @@ const legalPoints = (text = "") =>
 
 export default function LegalPage() {
   const location = useLocation();
+  const pagePath = location.pathname;
   const fallback =
-    fallbackPages[location.pathname] || fallbackPages["/syarat-ketentuan"];
+    fallbackPages[pagePath] || fallbackPages["/syarat-ketentuan"];
   const [settings, setSettings] = useState(null);
   const [legalDocuments, setLegalDocuments] = useState([]);
   const [paymentLogos, setPaymentLogos] = useState([]);
+  const [contentLoading, setContentLoading] = useState(true);
+  const [contentFailed, setContentFailed] = useState(false);
   const [messageForm, setMessageForm] = useState({
     name: "",
     email: "",
@@ -70,18 +73,39 @@ export default function LegalPage() {
   useEffect(() => {
     let isMounted = true;
 
-    api.get("/content").then((response) => {
-      if (isMounted) {
-        setSettings(response.data.settings);
-        setLegalDocuments(response.data.legalDocuments || []);
-        setPaymentLogos(response.data.footerPaymentLogos || []);
-      }
-    });
+    setContentLoading(true);
+    setContentFailed(false);
+    setLegalDocuments([]);
+
+    api
+      .get("/content", {
+        params: {
+          page: fallback.type,
+          t: Date.now(),
+        },
+      })
+      .then((response) => {
+        if (isMounted) {
+          setSettings(response.data.settings);
+          setLegalDocuments(response.data.legalDocuments || []);
+          setPaymentLogos(response.data.footerPaymentLogos || []);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setContentFailed(true);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setContentLoading(false);
+        }
+      });
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [fallback.type]);
 
   const page = useMemo(() => {
     const document = legalDocuments.find(
@@ -99,7 +123,9 @@ export default function LegalPage() {
       content: document.content,
       note: document.note,
     };
-  }, [fallback, legalDocuments]);
+  }, [fallback.type, fallback.label, fallback.intro, fallback.content, fallback.note, legalDocuments]);
+
+  const showLoadingState = contentLoading && !contentFailed;
 
   const submitMessage = (event) => {
     event.preventDefault();
@@ -117,7 +143,7 @@ export default function LegalPage() {
 
   if (fallback.type === "HELP") {
     return (
-      <div className="min-h-screen bg-[#0f0d0a] text-white">
+      <div key={pagePath} className="min-h-screen bg-[#0f0d0a] text-white">
         <PublicTopBar active="Bantuan" logo={settings?.logo} />
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-5 sm:py-10">
           <section className="text-center">
@@ -255,8 +281,8 @@ export default function LegalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0d0a] text-white">
-      <PublicTopBar active={page.label} logo={settings?.logo} />
+    <div key={pagePath} className="min-h-screen bg-[#0f0d0a] text-white">
+      <PublicTopBar active={fallback.label} logo={settings?.logo} />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-5 sm:py-10">
         <section className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-[#d5a756]/15 bg-[#17130f]">
           <div className="border-b border-[#d5a756]/15 bg-black/20 p-8 md:p-10">
@@ -266,33 +292,37 @@ export default function LegalPage() {
               </Link>
               <span className="mx-3">/</span>
               <span className="font-bold text-[#f0cf87]">
-                {page.label}
+                {fallback.label}
               </span>
             </div>
             <h1 className="mt-10 text-3xl font-black text-[#d5a756] md:text-5xl">
-              {page.label}
+              {fallback.label}
             </h1>
             <p className="mt-5 text-lg leading-8 text-zinc-100">
-              {page.intro}
+              {showLoadingState ? fallback.intro : page.intro}
             </p>
           </div>
 
           <div className="p-8 md:p-10">
-            <div className="space-y-4">
-              {legalPoints(page.content).map((point, index) => (
-                <div
-                  key={`${point}-${index}`}
-                  className="grid gap-4 rounded-xl border border-[#d5a756]/15 bg-black/20 p-4 sm:grid-cols-[52px_1fr] sm:p-5"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#d5a756] text-lg font-black text-[#14100b]">
-                    {index + 1}
+            {showLoadingState ? (
+              <LegalSkeleton />
+            ) : (
+              <div className="space-y-4">
+                {legalPoints(page.content).map((point, index) => (
+                  <div
+                    key={`${fallback.type}-${index}-${point}`}
+                    className="grid gap-4 rounded-xl border border-[#d5a756]/15 bg-black/20 p-4 sm:grid-cols-[52px_1fr] sm:p-5"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#d5a756] text-lg font-black text-[#14100b]">
+                      {index + 1}
+                    </div>
+                    <p className="text-lg leading-8 text-zinc-100">
+                      {point}
+                    </p>
                   </div>
-                  <p className="text-lg leading-8 text-zinc-100">
-                    {point}
-                  </p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             {page.note && (
               <div className="mt-10 rounded-lg border border-[#d5a756]/15 bg-black/20 p-5 font-bold text-zinc-100">
                 {page.note}
@@ -344,6 +374,25 @@ function ContactCard({ label, value, type }) {
     >
       {content}
     </a>
+  );
+}
+
+function LegalSkeleton() {
+  return (
+    <div className="space-y-4">
+      {[1, 2, 3, 4].map((item) => (
+        <div
+          key={item}
+          className="grid animate-pulse gap-4 rounded-xl border border-[#d5a756]/15 bg-black/20 p-4 sm:grid-cols-[52px_1fr] sm:p-5"
+        >
+          <div className="h-12 w-12 rounded-full bg-[#d5a756]/30" />
+          <div className="space-y-3">
+            <div className="h-5 w-3/4 rounded bg-white/10" />
+            <div className="h-5 w-full rounded bg-white/10" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

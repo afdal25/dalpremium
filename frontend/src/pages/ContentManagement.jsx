@@ -440,10 +440,12 @@ export default function ContentManagement() {
     setArticleFile(null);
   };
 
-  const resetLegal = () => {
+  const resetLegal = (type = "TERMS") => {
+    const page = legalPages.find((item) => item.type === type);
+
     setLegalForm({
-      type: "TERMS",
-      title: "",
+      type,
+      title: page?.title || "",
       intro: "",
       content: "",
       note: "",
@@ -468,7 +470,7 @@ export default function ContentManagement() {
       }
 
       toast.success("Halaman informasi berhasil disimpan");
-      resetLegal();
+      resetLegal(legalForm.type);
       loadContent();
     } catch (error) {
       toast.error(
@@ -1152,7 +1154,7 @@ export default function ContentManagement() {
           {editingLegalId && (
             <button
               type="button"
-              onClick={resetLegal}
+              onClick={() => resetLegal(legalForm.type)}
               className="rounded-lg border border-white/10 px-5 py-3 font-black text-zinc-200"
             >
               Batal
