@@ -529,8 +529,8 @@ export default function Shop() {
 
       <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
         {(loading || activeBanner) && (
-          <section className="relative mb-7 overflow-hidden rounded-[28px] border border-[#d5a756]/15 bg-[#17130f]">
-            <div className="relative min-h-[220px] sm:min-h-[320px] lg:min-h-[380px]">
+          <section className="relative mb-7 overflow-hidden rounded-2xl border border-[#d5a756]/15 bg-[#17130f] sm:rounded-[28px]">
+            <div className="relative aspect-[16/9] min-h-[160px] sm:min-h-[320px] lg:min-h-[380px]">
               {loading ? (
                 <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#17130f_8%,#241b13_18%,#17130f_33%)] bg-[length:200%_100%]" />
               ) : (
@@ -538,7 +538,7 @@ export default function Shop() {
                   <img
                     src={activeBanner.image}
                     alt="Banner DALPREMIUM"
-                    className="absolute inset-0 h-full w-full object-cover opacity-80"
+                    className="absolute inset-0 h-full w-full object-contain opacity-90 sm:object-cover sm:opacity-80"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-black/10" />
 
