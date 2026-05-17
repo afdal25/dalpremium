@@ -9,7 +9,6 @@ import {
   assetUrl as imageUrl,
   optimizedImageUrl,
 } from "../utils/url";
-import api from "../services/api";
 import {
   clearCachedLogo,
   getCachedLogo,
@@ -170,6 +169,7 @@ export default function PublicTopBar({
   language: controlledLanguage,
   onLanguageChange,
   onNavigate,
+  fetchRemoteLogo = true,
 }) {
   const location = useLocation();
   const headerRef = useRef(null);
@@ -202,14 +202,17 @@ export default function PublicTopBar({
   };
 
   useEffect(() => {
-    if (logo) {
+    if (logo || !fetchRemoteLogo) {
       setRemoteLogo("");
       return undefined;
     }
 
     let isMounted = true;
 
-    api
+    import("../services/api")
+      .then((module) => module.default)
+      .then((api) =>
+        api
       .get("/content")
       .then((response) => {
         if (!isMounted) {
@@ -224,12 +227,13 @@ export default function PublicTopBar({
           setRemoteLogo(clearCachedLogo());
         }
       })
+      )
       .catch(() => {});
 
     return () => {
       isMounted = false;
     };
-  }, [logo]);
+  }, [fetchRemoteLogo, logo]);
 
   const displayLogo = logo
     ? optimizedImageUrl(logo, { width: 112, crop: "limit" })

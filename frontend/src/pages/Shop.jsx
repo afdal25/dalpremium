@@ -1,13 +1,23 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import api from "../services/api";
-import PublicTopBar from "../components/PublicTopBar";
-import PublicFooter from "../components/PublicFooter";
-import WhatsAppWidget from "../components/WhatsAppWidget";
 import {
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { Link } from "react-router-dom";
+import PublicTopBar from "../components/PublicTopBar";
+import useNearViewport from "../hooks/useNearViewport";
+import {
+  API_BASE_URL,
   assetUrl as imageUrl,
   optimizedImageUrl,
 } from "../utils/url";
+
+const PublicFooter = lazy(() => import("../components/PublicFooter"));
+const WhatsAppWidget = lazy(() =>
+  import("../components/WhatsAppWidget")
+);
 
 const copy = {
   id: {
@@ -130,6 +140,18 @@ const imageSrcSet = (path, widths, options = {}) =>
         })} ${width}w`
     )
     .join(", ");
+
+const fetchJson = async (path) => {
+  const response = await fetch(`${API_BASE_URL}${path}`);
+
+  if (!response.ok) {
+    const error = new Error("Request failed");
+    error.status = response.status;
+    throw error;
+  }
+
+  return response.json();
+};
 
 function Icon({ name, className = "h-5 w-5" }) {
   const paths = {
@@ -298,7 +320,11 @@ export default function Shop() {
   );
   const [serviceFilter, setServiceFilter] = useState("ALL");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
-  const [visibleProductLimit, setVisibleProductLimit] = useState(12);
+  const [visibleProductLimit, setVisibleProductLimit] = useState(() =>
+    window.matchMedia("(max-width: 639px)").matches ? 6 : 8
+  );
+  const [showFloatingHelp, setShowFloatingHelp] = useState(false);
+  const [footerRef, footerVisible] = useNearViewport("900px");
 
   useEffect(() => {
     let isMounted = true;
@@ -310,24 +336,24 @@ export default function Shop() {
         let contentData = {};
 
         try {
-          const response = await api.get("/shop");
-          productsData = response.data.products || [];
-          contentData = response.data.content || {};
+          const response = await fetchJson("/shop");
+          productsData = response.products || [];
+          contentData = response.content || {};
         } catch (error) {
-          if (error.response?.status !== 404) {
+          if (error.status !== 404) {
             throw error;
           }
 
           const [productsResponse, contentResponse] =
             await Promise.all([
-              api.get("/products"),
-              api.get("/content"),
+              fetchJson("/products"),
+              fetchJson("/content"),
             ]);
 
-          productsData = productsResponse.data.filter(
+          productsData = productsResponse.filter(
             (item) => item.isActive
           );
-          contentData = contentResponse.data;
+          contentData = contentResponse;
         }
 
         if (isMounted) {
@@ -356,6 +382,14 @@ export default function Shop() {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setShowFloatingHelp(true);
+    }, 1800);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -522,7 +556,9 @@ export default function Shop() {
   );
 
   useEffect(() => {
-    setVisibleProductLimit(12);
+    setVisibleProductLimit(
+      window.matchMedia("(max-width: 639px)").matches ? 6 : 8
+    );
   }, [query, serviceFilter, categoryFilter]);
 
   const carouselSlides = useMemo(() => {
@@ -592,6 +628,7 @@ export default function Shop() {
         language={language}
         onLanguageChange={setLanguage}
         onNavigate={(label) => setActiveNav(label)}
+        fetchRemoteLogo={false}
       />
 
       <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
@@ -798,22 +835,18 @@ export default function Shop() {
             </div>
           )}
 
-          {!loading && filteredGroups.length > 12 && (
+          {!loading && filteredGroups.length > visibleGroups.length && (
             <div className="mt-6 text-center">
               <button
                 type="button"
                 onClick={() =>
                   setVisibleProductLimit((current) =>
-                    current >= filteredGroups.length
-                      ? 12
-                      : Math.min(current + 12, filteredGroups.length)
+                    Math.min(current + 8, filteredGroups.length)
                   )
                 }
                 className="rounded-lg border border-[#d5a756]/25 px-5 py-3 text-sm font-black text-[#f0cf87] transition hover:bg-[#d5a756]/10"
               >
-                {visibleProductLimit >= filteredGroups.length
-                  ? t.showLessProducts
-                  : t.showMoreProducts}
+                {t.showMoreProducts}
               </button>
             </div>
           )}
@@ -914,18 +947,29 @@ export default function Shop() {
           </div>
         </section>
       </main>
-      <PublicFooter
-        logo={content.settings?.logo}
-        settings={content.settings}
-        paymentLogos={content.footerPaymentLogos}
-      />
-      <WhatsAppWidget
-        phone={
-          content.settings?.footerWhatsapp ||
-          content.settings?.waGatewaySender ||
-          "083897585959"
-        }
-      />
+      <div ref={footerRef} className="min-h-28">
+        {footerVisible && (
+          <Suspense fallback={null}>
+            <PublicFooter
+              logo={content.settings?.logo}
+              settings={content.settings}
+              paymentLogos={content.footerPaymentLogos}
+              fetchPaymentLogos={false}
+            />
+          </Suspense>
+        )}
+      </div>
+      {showFloatingHelp && (
+        <Suspense fallback={null}>
+          <WhatsAppWidget
+            phone={
+              content.settings?.footerWhatsapp ||
+              content.settings?.waGatewaySender ||
+              "083897585959"
+            }
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -120,14 +120,6 @@ svg {
   max-width: 100%;
 }
 
-body:not(:has(.admin-theme)) img {
-  transition: transform 0.45s ease;
-}
-
-body:not(:has(.admin-theme)) img:hover {
-  transform: scale(1.04);
-}
-
 * {
   box-sizing: border-box;
 }

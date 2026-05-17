@@ -7,7 +7,12 @@ import {
 } from "../utils/url";
 import { getCachedLogo } from "../utils/branding";
 
-export default function PublicFooter({ logo, settings, paymentLogos = [] }) {
+export default function PublicFooter({
+  logo,
+  settings,
+  paymentLogos = [],
+  fetchPaymentLogos = true,
+}) {
   const [loadedPaymentLogos, setLoadedPaymentLogos] = useState([]);
   const displayLogo = optimizedImageUrl(
     logo ? imageUrl(logo) : getCachedLogo(),
@@ -20,7 +25,7 @@ export default function PublicFooter({ logo, settings, paymentLogos = [] }) {
     paymentLogos.length > 0 ? paymentLogos : loadedPaymentLogos;
 
   useEffect(() => {
-    if (paymentLogos.length > 0) {
+    if (!fetchPaymentLogos || paymentLogos.length > 0) {
       return;
     }
 
@@ -37,7 +42,7 @@ export default function PublicFooter({ logo, settings, paymentLogos = [] }) {
     return () => {
       isMounted = false;
     };
-  }, [paymentLogos.length]);
+  }, [fetchPaymentLogos, paymentLogos.length]);
 
   return (
     <footer className="mt-14 border-t border-[#d5a756]/15 bg-[#0b0a08] text-white">
