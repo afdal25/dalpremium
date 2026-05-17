@@ -530,7 +530,7 @@ export default function Shop() {
       <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
         {(loading || activeBanner) && (
           <section className="relative mb-7 overflow-hidden rounded-2xl border border-[#d5a756]/15 bg-[#17130f] sm:rounded-[28px]">
-            <div className="relative aspect-[16/9] min-h-0 sm:min-h-[320px] lg:min-h-[380px]">
+            <div className="relative aspect-[3/1] min-h-0 sm:aspect-auto sm:min-h-[320px] lg:min-h-[380px]">
               {loading ? (
                 <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#17130f_8%,#241b13_18%,#17130f_33%)] bg-[length:200%_100%]" />
               ) : (
