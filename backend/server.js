@@ -125,6 +125,7 @@ app.use("/api", apiLimiter);
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
+    mediaStorage: cloudinaryEnabled ? "cloudinary" : "local",
     timestamp: new Date().toISOString(),
   });
 });
