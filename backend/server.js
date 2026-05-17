@@ -174,7 +174,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: {
-    fileSize: 2 * 1024 * 1024,
+    fileSize: 5 * 1024 * 1024,
     files: 3,
   },
   fileFilter: (req, file, cb) => {
@@ -296,6 +296,13 @@ const getSafeErrorMessage = (error) => {
 };
 
 const sendServerError = (res, error) => {
+  if (error?.code === "P2002") {
+    return res.status(409).json({
+      message:
+        "Data dengan kombinasi ini sudah ada. Ubah nama, durasi, atau plan.",
+    });
+  }
+
   const statusCode = error?.statusCode || 500;
   res.status(statusCode).json({
     message: getSafeErrorMessage(error),
@@ -5071,7 +5078,7 @@ app.use((error, req, res, next) => {
     return res.status(400).json({
       message:
         error.code === "LIMIT_FILE_SIZE"
-          ? "Ukuran file maksimal 2MB"
+          ? "Ukuran file maksimal 5MB"
           : "Upload file tidak valid",
     });
   }

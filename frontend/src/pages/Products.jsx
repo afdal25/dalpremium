@@ -145,8 +145,11 @@ export default function Products() {
       setImageFile(null);
 
       fetchProducts();
-    } catch {
-      toast.error("Gagal menambahkan product");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          "Gagal menambahkan product"
+      );
     } finally {
       setLoading(false);
     }
@@ -179,8 +182,11 @@ export default function Products() {
       setEditData(null);
       setEditImageFile(null);
       fetchProducts();
-    } catch {
-      toast.error("Gagal update product");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          "Gagal update product"
+      );
     } finally {
       setLoading(false);
     }
