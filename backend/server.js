@@ -303,6 +303,13 @@ const sendServerError = (res, error) => {
     });
   }
 
+  if (error?.code === "P2000") {
+    return res.status(400).json({
+      message:
+        "Data terlalu panjang untuk disimpan. Kurangi teks atau perbarui struktur database.",
+    });
+  }
+
   const statusCode = error?.statusCode || 500;
   res.status(statusCode).json({
     message: getSafeErrorMessage(error),

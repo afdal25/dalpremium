@@ -188,7 +188,7 @@ model Product {
   price        Int
   duration     String?
   plan         String?
-  description  String?
+  description  String? @db.Text
   image        String?
   deliveryType String   // INVITE / ACCOUNT
   categoryId   Int?
