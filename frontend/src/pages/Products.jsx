@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../services/api";
 import FilePicker from "../components/FilePicker";
@@ -21,6 +21,7 @@ export default function Products() {
   const [openExport, setOpenExport] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [categoryName, setCategoryName] = useState("");
   const [editingCategory, setEditingCategory] = useState(null);
   const [imageFile, setImageFile] = useState(null);
@@ -38,15 +39,28 @@ export default function Products() {
     isActive: true,
   });
 
-  const fetchProducts = async () => {
+  const productParams = {
+    stock: false,
+    page: currentPage,
+    limit: itemsPerPage,
+    search: search.trim() || undefined,
+    delivery: deliveryFilter === "ALL" ? undefined : deliveryFilter,
+    status: statusFilter === "ALL" ? undefined : statusFilter,
+  };
+
+  const fetchProducts = async (params = productParams) => {
     try {
       setLoading(true);
       const response = await api.get("/products", {
-        params: {
-          stock: false,
-        },
+        params,
       });
-      setProducts(response.data);
+      const data = response.data;
+      const nextProducts = Array.isArray(data) ? data : data.items || [];
+
+      setProducts(nextProducts);
+      setTotalProducts(
+        Array.isArray(data) ? nextProducts.length : data.total || 0
+      );
     } catch {
       toast.error("Gagal mengambil product");
     } finally {
@@ -66,40 +80,43 @@ export default function Products() {
   useEffect(() => {
     let isMounted = true;
 
-    const loadProducts = async () => {
+    const loadCategories = async () => {
       try {
-        setLoading(true);
-        const [productsResponse, categoriesResponse] =
-          await Promise.all([
-            api.get("/products", {
-              params: {
-                stock: false,
-              },
-            }),
-            api.get("/product-categories"),
-          ]);
+        const categoriesResponse = await api.get("/product-categories");
 
         if (isMounted) {
-          setProducts(productsResponse.data);
           setCategories(categoriesResponse.data);
         }
       } catch {
         if (isMounted) {
-          toast.error("Gagal mengambil product");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
+          toast.error("Gagal mengambil kategori");
         }
       }
     };
 
-    loadProducts();
+    loadCategories();
 
     return () => {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(
+      () => {
+        fetchProducts();
+      },
+      search.trim() ? 250 : 0
+    );
+
+    return () => window.clearTimeout(timeout);
+  }, [
+    currentPage,
+    itemsPerPage,
+    search,
+    deliveryFilter,
+    statusFilter,
+  ]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -126,7 +143,7 @@ export default function Products() {
     setForm(nextForm);
   };
 
-  const productTemplates = Array.from(
+  const productTemplates = useMemo(() => Array.from(
     products
       .reduce((templates, item) => {
         if (!templates.has(item.name)) {
@@ -136,7 +153,7 @@ export default function Products() {
         return templates;
       }, new Map())
       .values()
-  );
+  ), [products]);
 
   const useProductTemplate = (productName) => {
     if (!productName) {
@@ -270,38 +287,23 @@ export default function Products() {
     }
   };
 
-  const filteredProducts = products.filter((item) => {
-    const matchSearch =
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.duration?.toLowerCase().includes(search.toLowerCase()) ||
-      item.plan?.toLowerCase().includes(search.toLowerCase()) ||
-      item.category?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      item.description?.toLowerCase().includes(search.toLowerCase());
+  const totalPages = Math.ceil(totalProducts / itemsPerPage);
+  const paginatedProducts = products;
 
-    const matchDelivery =
-      deliveryFilter === "ALL"
-        ? true
-        : item.deliveryType === deliveryFilter;
+  const getExportProducts = async () => {
+    const response = await api.get("/products", {
+      params: {
+        ...productParams,
+        page: 1,
+        limit: 5000,
+      },
+    });
 
-    const matchStatus =
-      statusFilter === "ALL"
-        ? true
-        : statusFilter === "ACTIVE"
-        ? item.isActive
-        : !item.isActive;
+    return response.data.items || [];
+  };
 
-    return matchSearch && matchDelivery && matchStatus;
-  });
-
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const getExportRows = () =>
-    filteredProducts.map((item) => ({
+  const buildExportRows = (rows) =>
+    rows.map((item) => ({
       Name: item.name,
       Category: item.category?.name || "-",
       Duration: item.duration || "-",
@@ -313,15 +315,18 @@ export default function Products() {
     }));
 
   const exportExcel = async () => {
-    await exportRowsToXlsx(getExportRows(), "products.xlsx", "Products");
+    const rows = buildExportRows(await getExportProducts());
+    await exportRowsToXlsx(rows, "products.xlsx", "Products");
     toast.success("Excel berhasil di-export");
   };
 
   const exportPDF = async () => {
+    const rows = await getExportProducts();
+
     await exportRowsToPdf({
       title: "Laporan Products",
       headers: ["Name", "Category", "Duration", "Plan", "Price", "Type", "Status"],
-      rows: filteredProducts.map((item) => [
+      rows: rows.map((item) => [
         item.name,
         item.category?.name || "-",
         item.duration || "-",
@@ -335,8 +340,9 @@ export default function Products() {
     toast.success("PDF berhasil di-export");
   };
 
-  const exportCSV = () => {
-    exportRowsToCsv(getExportRows(), "products.csv");
+  const exportCSV = async () => {
+    const rows = buildExportRows(await getExportProducts());
+    exportRowsToCsv(rows, "products.csv");
     toast.success("CSV berhasil di-export");
   };
 

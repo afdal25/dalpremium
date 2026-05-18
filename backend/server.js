@@ -4513,18 +4513,96 @@ app.delete(
 app.get("/api/products", async (req, res) => {
   try {
     const includeStock = req.query.stock !== "false";
-    const products = await prisma.product.findMany({
-      include: {
-        category: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    const page = Math.max(Number(req.query.page) || 0, 0);
+    const limit = Math.min(
+      Math.max(Number(req.query.limit) || 0, 0),
+      5000
+    );
+    const search = cleanString(req.query.search, 120);
+    const delivery = cleanString(req.query.delivery, 20);
+    const status = cleanString(req.query.status, 20);
+    const where = {};
+
+    if (search) {
+      where.OR = [
+        {
+          name: {
+            contains: search,
+          },
+        },
+        {
+          duration: {
+            contains: search,
+          },
+        },
+        {
+          plan: {
+            contains: search,
+          },
+        },
+        {
+          description: {
+            contains: search,
+          },
+        },
+        {
+          category: {
+            is: {
+              name: {
+                contains: search,
+              },
+            },
+          },
+        },
+      ];
+    }
+
+    if (["INVITE", "ACCOUNT"].includes(delivery)) {
+      where.deliveryType = delivery;
+    }
+
+    if (status === "ACTIVE") {
+      where.isActive = true;
+    } else if (status === "INACTIVE") {
+      where.isActive = false;
+    }
+
+    const shouldPaginate = page > 0 && limit > 0;
+    const pagination = shouldPaginate
+      ? {
+          skip: (page - 1) * limit,
+          take: limit,
+        }
+      : {};
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          category: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        ...pagination,
+      }),
+      shouldPaginate
+        ? prisma.product.count({ where })
+        : Promise.resolve(null),
+    ]);
 
     const responseProducts = includeStock
       ? await buildProductsWithStock(products)
       : products;
+
+    if (shouldPaginate) {
+      return res.json({
+        items: responseProducts,
+        total,
+        page,
+        limit,
+      });
+    }
 
     res.json(responseProducts);
   } catch (error) {
