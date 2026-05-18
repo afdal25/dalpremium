@@ -17,6 +17,23 @@
     <title>DALPREMIUM - Aplikasi Premium Murah</title>
     <script>
       document.documentElement.dataset.hash = location.hash.replace("#", "");
+      try {
+        var cachedBanner = localStorage.getItem("dalpremiumFirstBannerImage");
+
+        if (
+          cachedBanner &&
+          document.documentElement.dataset.hash !== "produk"
+        ) {
+          var preloadBanner = document.createElement("link");
+          preloadBanner.rel = "preload";
+          preloadBanner.as = "image";
+          preloadBanner.href = cachedBanner;
+          preloadBanner.fetchPriority = "high";
+          document.head.appendChild(preloadBanner);
+        }
+      } catch (error) {
+        /* localStorage may be unavailable in private browsing modes. */
+      }
     </script>
     <style>
       html,

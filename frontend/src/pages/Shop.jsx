@@ -689,6 +689,20 @@ export default function Shop() {
   }, [activeSlide, carouselSlides.length]);
 
   useEffect(() => {
+    const firstBanner = carouselSlides[0]?.image;
+
+    if (!firstBanner) {
+      return;
+    }
+
+    try {
+      localStorage.setItem("dalpremiumFirstBannerImage", firstBanner);
+    } catch {
+      // Ignore storage failures in private browsing modes.
+    }
+  }, [carouselSlides]);
+
+  useEffect(() => {
     if (hideBannerForProductHash || loading || carouselSlides.length <= 1) {
       return undefined;
     }

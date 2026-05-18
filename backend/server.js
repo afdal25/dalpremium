@@ -4127,7 +4127,7 @@ const buildProductsWithStock = async (products) =>
     }))
   );
 
-const SHOP_RESPONSE_CACHE_TTL = 1000 * 20;
+const SHOP_RESPONSE_CACHE_TTL = 1000 * 60;
 let shopResponseCache = {
   expiresAt: 0,
   payload: null,
@@ -4139,7 +4139,7 @@ app.get("/api/shop", async (req, res) => {
       shopResponseCache.payload &&
       shopResponseCache.expiresAt > Date.now()
     ) {
-      res.set("Cache-Control", "public, max-age=20, stale-while-revalidate=60");
+      res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
       return res.json(shopResponseCache.payload);
     }
 
@@ -4273,7 +4273,7 @@ app.get("/api/shop", async (req, res) => {
       payload,
     };
 
-    res.set("Cache-Control", "public, max-age=20, stale-while-revalidate=60");
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
     res.json(payload);
   } catch (error) {
     sendServerError(res, error);
