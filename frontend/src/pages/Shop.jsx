@@ -378,8 +378,6 @@ export default function Shop() {
   const [query, setQuery] = useState("");
   const [activeNav, setActiveNav] = useState("Produk");
   const [activeSlide, setActiveSlide] = useState(0);
-  const [hideBannerForProductHash, setHideBannerForProductHash] =
-    useState(() => window.location.hash === "#produk");
   const [language, setLanguage] = useState(
     localStorage.getItem("shopLanguage") || "id"
   );
@@ -477,7 +475,6 @@ export default function Shop() {
     const syncHash = () => {
       const hash = window.location.hash.replace("#", "");
       const matched = sections.find(([id]) => id === hash);
-      setHideBannerForProductHash(hash === "produk");
 
       if (matched) {
         setActiveNav(matched[1]);
@@ -652,7 +649,7 @@ export default function Shop() {
   }, [content.banners]);
 
   const activeBanner =
-    !hideBannerForProductHash && carouselSlides.length > 0
+    carouselSlides.length > 0
       ? carouselSlides[activeSlide % carouselSlides.length]
       : null;
   const visibleTestimonials = showAllTestimonials
@@ -700,7 +697,7 @@ export default function Shop() {
   }, [carouselSlides]);
 
   useEffect(() => {
-    if (hideBannerForProductHash || loading || carouselSlides.length <= 1) {
+    if (loading || carouselSlides.length <= 1) {
       return undefined;
     }
 
@@ -709,7 +706,7 @@ export default function Shop() {
     }, 5000);
 
     return () => window.clearInterval(timer);
-  }, [carouselSlides.length, hideBannerForProductHash, loading]);
+  }, [carouselSlides.length, loading]);
 
   return (
     <div className="min-h-screen bg-[#0f0d0a] text-white">
@@ -723,7 +720,7 @@ export default function Shop() {
       />
 
       <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
-        {!hideBannerForProductHash && (loading || activeBanner) && (
+        {(loading || activeBanner) && (
           <section className="relative mb-7 overflow-hidden rounded-2xl border border-[#d5a756]/15 bg-[#17130f] sm:rounded-[28px]">
             <div className="relative aspect-[3/1] min-h-0 sm:aspect-auto sm:min-h-[320px] lg:min-h-[380px]">
               {loading ? (
