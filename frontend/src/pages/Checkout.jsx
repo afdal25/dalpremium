@@ -216,9 +216,6 @@ export default function Checkout() {
         if (isMounted) {
           const methods = response.data || [];
           setPaymentMethods(methods);
-          setSelectedPaymentMethodId((current) =>
-            current || (methods[0]?.id ? String(methods[0].id) : "")
-          );
         }
       })
       .catch(() => {
