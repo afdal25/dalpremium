@@ -1,20 +1,9 @@
-import {
-  lazy,
-  Suspense,
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 import api from "../services/api";
-import useNearViewport from "../hooks/useNearViewport";
-
-const DashboardChart = lazy(() =>
-  import("../components/DashboardChart")
-);
+import DashboardChart from "../components/DashboardChart";
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
-  const [showChart, setShowChart] = useState(false);
-  const [chartRef, chartNearViewport] = useNearViewport("250px");
 
   const [month, setMonth] = useState(
     new Date().getMonth() + 1
@@ -39,23 +28,6 @@ export default function Dashboard() {
     clearInterval(interval);
 
 }, [month, year]);
-
-  useEffect(() => {
-    if (!data || !chartNearViewport) {
-      setShowChart(false);
-      return undefined;
-    }
-
-    const show = () => setShowChart(true);
-
-    if ("requestIdleCallback" in window) {
-      const id = window.requestIdleCallback(show, { timeout: 1800 });
-      return () => window.cancelIdleCallback(id);
-    }
-
-    const timer = window.setTimeout(show, 1200);
-    return () => window.clearTimeout(timer);
-  }, [chartNearViewport, data]);
 
   const fetchDashboard = async () => {
     try {
@@ -252,7 +224,6 @@ export default function Dashboard() {
 
       {/* Chart */}
       <div
-        ref={chartRef}
         className="relative overflow-hidden bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl"
       >
         <h2 className="text-2xl font-bold mb-6">
@@ -260,17 +231,7 @@ export default function Dashboard() {
         </h2>
 
         <div className="h-[400px]">
-          <Suspense
-            fallback={
-              <div className="h-full animate-pulse rounded-2xl bg-zinc-800/60" />
-            }
-          >
-            {showChart ? (
-              <DashboardChart data={chartData} />
-            ) : (
-              <div className="h-full animate-pulse rounded-2xl bg-zinc-800/60" />
-            )}
-          </Suspense>
+          <DashboardChart data={chartData} />
         </div>
       </div>
 
@@ -375,7 +336,7 @@ export default function Dashboard() {
           </p>
 
           <p className="text-zinc-400 text-sm">
-            Slot: {item.invites?.length || 0} / {item.familySlot}
+            Slot: {item._count?.invites || item.invites?.length || 0} / {item.familySlot}
           </p>
         </div>
 

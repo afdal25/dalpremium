@@ -1700,184 +1700,215 @@ app.get(
         59
       );
 
-      const totalEmails =
-        await prisma.emailAccount.count();
+      const monthWhere = {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      };
 
-      const errorEmails =
-        await prisma.emailAccount.count({
+      const [
+        totalEmails,
+        errorEmails,
+        totalInvites,
+        orderStatusCounts,
+        orderRevenueAggregate,
+        transactionTypeSums,
+        dailyRows,
+        bestSellerRows,
+        recentOrders,
+        recentTransactions,
+        recentEmails,
+        recentAuditLogs,
+      ] = await Promise.all([
+        prisma.emailAccount.count(),
+        prisma.emailAccount.count({
           where: { status: "ERROR" },
-        });
-
-      const totalInvites =
-        await prisma.familyInvite.count();
-
-      const transactions =
-        await prisma.transaction.findMany({
+        }),
+        prisma.familyInvite.count(),
+        prisma.order.groupBy({
+          by: ["status"],
+          where: monthWhere,
+          _count: {
+            _all: true,
+          },
+        }),
+        prisma.order.aggregate({
           where: {
-            createdAt: {
-              gte: startDate,
-              lte: endDate,
+            ...monthWhere,
+            status: "COMPLETED",
+          },
+          _sum: {
+            totalPrice: true,
+          },
+        }),
+        prisma.transaction.groupBy({
+          by: ["type"],
+          where: monthWhere,
+          _sum: {
+            amount: true,
+          },
+        }),
+        prisma.$queryRaw`
+          SELECT
+            DAY(createdAt) AS day,
+            SUM(CASE WHEN type = 'PENDAPATAN' THEN amount ELSE 0 END) AS income,
+            SUM(CASE WHEN type = 'PENGELUARAN' THEN amount ELSE 0 END) AS expense
+          FROM \`Transaction\`
+          WHERE createdAt >= ${startDate} AND createdAt <= ${endDate}
+          GROUP BY DAY(createdAt)
+          ORDER BY day ASC
+        `,
+        prisma.$queryRaw`
+          SELECT
+            productId,
+            COUNT(*) AS totalSold,
+            SUM(totalPrice) AS revenue
+          FROM \`Order\`
+          WHERE status = 'COMPLETED'
+            AND createdAt >= ${startDate}
+            AND createdAt <= ${endDate}
+          GROUP BY productId
+          ORDER BY totalSold DESC
+          LIMIT 5
+        `,
+        prisma.order.findMany({
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 5,
+          select: {
+            id: true,
+            customerName: true,
+            status: true,
+            totalPrice: true,
+            createdAt: true,
+            product: {
+              select: {
+                name: true,
+                duration: true,
+                plan: true,
+              },
             },
           },
-        });
-
-      const orders =
-        await prisma.order.findMany({
-          where: {
-            createdAt: {
-              gte: startDate,
-              lte: endDate,
+        }),
+        prisma.transaction.findMany({
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 5,
+        }),
+        prisma.emailAccount.findMany({
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 5,
+          select: {
+            id: true,
+            email: true,
+            status: true,
+            familySlot: true,
+            _count: {
+              select: {
+                invites: true,
+              },
             },
           },
-          include: {
-            product: true,
-          },
-        });
-
-      const totalOrders = orders.length;
-
-      const pendingOrders = orders.filter(
-        (item) => item.status === "PENDING"
-      ).length;
-
-      const waitingOrders = orders.filter(
-        (item) =>
-          item.status === "WAITING_CONFIRMATION"
-      ).length;
-
-      const completedOrders = orders.filter(
-        (item) => item.status === "COMPLETED"
-      ).length;
-
-      const cancelledOrders = orders.filter(
-        (item) => item.status === "CANCELLED"
-      ).length;
-
-      const rejectedOrders = orders.filter(
-        (item) => item.status === "REJECTED"
-      ).length;
-
-      const orderRevenue = orders
-        .filter((item) => item.status === "COMPLETED")
-        .reduce(
-          (total, item) => total + item.totalPrice,
-          0
-        );
-
-      const productMap = {};
-
-      orders
-        .filter((item) => item.status === "COMPLETED")
-        .forEach((item) => {
-          const duration = item.product?.duration
-            ? ` - ${item.product.duration}`
-            : "";
-          const plan = item.product?.plan
-            ? ` - ${item.product.plan}`
-            : "";
-          const name = item.product?.name
-            ? `${item.product.name}${duration}${plan}`
-            : "Unknown";
-
-          if (!productMap[name]) {
-            productMap[name] = {
-              name,
-              totalSold: 0,
-              revenue: 0,
-            };
-          }
-
-          productMap[name].totalSold += 1;
-          productMap[name].revenue += item.totalPrice;
-        });
-
-      const bestSellerProducts = Object.values(
-        productMap
-      )
-        .sort((a, b) => b.totalSold - a.totalSold)
-        .slice(0, 5);
-
-      const recentOrders =
-        await prisma.order.findMany({
-          orderBy: {
-            createdAt: "desc",
-          },
-          take: 5,
-          include: {
-            product: true,
-          },
-        });
-
-      const recentTransactions =
-        await prisma.transaction.findMany({
-          orderBy: {
-            createdAt: "desc",
-          },
-          take: 5,
-        });
-
-      let income = 0;
-      let expense = 0;
-
-      transactions.forEach((item) => {
-        if (item.type === "PENDAPATAN") {
-          income += item.amount;
-        }
-
-        if (item.type === "PENGELUARAN") {
-          expense += item.amount;
-        }
-      });
-
-      const profit = income - expense;
-
-      const dailyMap = {};
-
-      transactions.forEach((item) => {
-        const day = new Date(
-          item.createdAt
-        ).getDate();
-
-        if (!dailyMap[day]) {
-          dailyMap[day] = {
-            date: String(day),
-            income: 0,
-            expense: 0,
-            profit: 0,
-          };
-        }
-
-        if (item.type === "PENDAPATAN") {
-          dailyMap[day].income += item.amount;
-          dailyMap[day].profit += item.amount;
-        }
-
-        if (item.type === "PENGELUARAN") {
-          dailyMap[day].expense += item.amount;
-          dailyMap[day].profit -= item.amount;
-        }
-      });
-
-      const dailyChart = Object.values(dailyMap);
-
-      const recentEmails =
-        await prisma.emailAccount.findMany({
-          orderBy: {
-            createdAt: "desc",
-          },
-          take: 5,
-          include: {
-            invites: true,
-          },
-        });
-
-      const recentAuditLogs =
-        await prisma.auditLog.findMany({
+        }),
+        prisma.auditLog.findMany({
           orderBy: {
             createdAt: "desc",
           },
           take: 8,
-        });
+        }),
+      ]);
+
+      const statusMap = orderStatusCounts.reduce((map, item) => {
+        map[item.status] = item._count._all;
+        return map;
+      }, {});
+
+      const totalOrders = orderStatusCounts.reduce(
+        (total, item) => total + item._count._all,
+        0
+      );
+      const pendingOrders = statusMap.PENDING || 0;
+      const waitingOrders =
+        statusMap.WAITING_CONFIRMATION || 0;
+      const completedOrders = statusMap.COMPLETED || 0;
+      const cancelledOrders = statusMap.CANCELLED || 0;
+      const rejectedOrders = statusMap.REJECTED || 0;
+      const orderRevenue = Number(
+        orderRevenueAggregate._sum.totalPrice || 0
+      );
+
+      const income =
+        Number(
+          transactionTypeSums.find(
+            (item) => item.type === "PENDAPATAN"
+          )?._sum.amount || 0
+        ) || 0;
+      const expense =
+        Number(
+          transactionTypeSums.find(
+            (item) => item.type === "PENGELUARAN"
+          )?._sum.amount || 0
+        ) || 0;
+      const profit = income - expense;
+
+      const dailyChart = dailyRows.map((row) => {
+        const day = Number(row.day);
+        const dayIncome = Number(row.income || 0);
+        const dayExpense = Number(row.expense || 0);
+
+        return {
+          date: String(day),
+          income: dayIncome,
+          expense: dayExpense,
+          profit: dayIncome - dayExpense,
+        };
+      });
+
+      const bestSellerProductIds = bestSellerRows.map((row) =>
+        Number(row.productId)
+      );
+      const bestSellerProductMap = new Map(
+        (
+          await prisma.product.findMany({
+            where: {
+              id: {
+                in: bestSellerProductIds,
+              },
+            },
+            select: {
+              id: true,
+              name: true,
+              duration: true,
+              plan: true,
+            },
+          })
+        ).map((product) => [product.id, product])
+      );
+
+      const bestSellerProducts = bestSellerRows.map((row) => {
+        const product = bestSellerProductMap.get(
+          Number(row.productId)
+        );
+        const duration = product?.duration
+          ? ` - ${product.duration}`
+          : "";
+        const plan = product?.plan
+          ? ` - ${product.plan}`
+          : "";
+
+        return {
+          name: product
+            ? `${product.name}${duration}${plan}`
+            : "Unknown",
+          totalSold: Number(row.totalSold || 0),
+          revenue: Number(row.revenue || 0),
+        };
+      });
 
       res.json({
         totalEmails,
