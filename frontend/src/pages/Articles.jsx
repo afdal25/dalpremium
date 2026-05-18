@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PublicTopBar from "../components/PublicTopBar";
-import PublicFooter from "../components/PublicFooter";
-import WhatsAppWidget from "../components/WhatsAppWidget";
 import api from "../services/api";
-import { assetUrl as imageUrl } from "../utils/url";
+import { imageSrcSet, optimizedImageUrl } from "../utils/url";
+
+const PublicFooter = lazy(() => import("../components/PublicFooter"));
+const WhatsAppWidget = lazy(() =>
+  import("../components/WhatsAppWidget")
+);
 
 export default function Articles() {
   const [query, setQuery] = useState("");
@@ -16,7 +19,7 @@ export default function Articles() {
     let isMounted = true;
 
     const loadContent = async () => {
-      const response = await api.get("/content");
+      const response = await api.get("/articles");
 
       if (isMounted) {
         setArticles(response.data.articles || []);
@@ -93,7 +96,10 @@ export default function Articles() {
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {filteredArticles.map((article) => (
+              {filteredArticles.map((article, index) => {
+                const priorityImage = index === 0;
+
+                return (
                 <Link
                   key={article.id}
                   to={`/articles/${article.slug}`}
@@ -102,8 +108,30 @@ export default function Articles() {
                   <div className="aspect-[16/9] bg-black/30">
                     {article.image ? (
                       <img
-                        src={imageUrl(article.image)}
+                        src={optimizedImageUrl(article.image, {
+                          width: priorityImage ? 420 : 520,
+                          crop: "limit",
+                          quality: priorityImage ? "auto:low" : "auto:eco",
+                        })}
+                        srcSet={imageSrcSet(
+                          article.image,
+                          priorityImage
+                            ? [240, 320, 420]
+                            : [320, 450, 640],
+                          {
+                            crop: "limit",
+                            quality: priorityImage
+                              ? "auto:low"
+                              : "auto:eco",
+                          }
+                        )}
+                        sizes="(max-width: 768px) 92vw, (max-width: 1280px) 45vw, 30vw"
                         alt={article.title}
+                        loading={priorityImage ? "eager" : "lazy"}
+                        fetchPriority={priorityImage ? "high" : "auto"}
+                        decoding="async"
+                        width="420"
+                        height="236"
                         className="h-full w-full object-cover"
                       />
                     ) : (
@@ -127,20 +155,23 @@ export default function Articles() {
                     </div>
                   </div>
                 </Link>
-              ))}
+              );
+              })}
             </div>
           )}
         </section>
       </main>
 
-      <PublicFooter
-        logo={settings?.logo}
-        settings={settings}
-        paymentLogos={paymentLogos}
-      />
-      <WhatsAppWidget
-        phone={settings?.footerWhatsapp || settings?.waGatewaySender || "083897585959"}
-      />
+      <Suspense fallback={null}>
+        <PublicFooter
+          logo={settings?.logo}
+          settings={settings}
+          paymentLogos={paymentLogos}
+        />
+        <WhatsAppWidget
+          phone={settings?.footerWhatsapp || settings?.waGatewaySender || "083897585959"}
+        />
+      </Suspense>
     </div>
   );
 }

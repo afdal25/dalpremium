@@ -11,6 +11,7 @@ import useNearViewport from "../hooks/useNearViewport";
 import {
   API_BASE_URL,
   assetUrl as imageUrl,
+  imageSrcSet,
   optimizedImageUrl,
 } from "../utils/url";
 
@@ -129,17 +130,6 @@ const billingLabel = (durations) => {
 
   return "/bulan";
 };
-
-const imageSrcSet = (path, widths, options = {}) =>
-  widths
-    .map(
-      (width) =>
-        `${optimizedImageUrl(path, {
-          ...options,
-          width,
-        })} ${width}w`
-    )
-    .join(", ");
 
 const fetchJson = async (path) => {
   const response = await fetch(`${API_BASE_URL}${path}`);

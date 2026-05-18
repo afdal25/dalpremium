@@ -3405,6 +3405,127 @@ app.get("/api/content", async (req, res) => {
   }
 });
 
+app.get("/api/articles", async (req, res) => {
+  try {
+    const [settings, articles, footerPaymentLogos] = await Promise.all([
+      prisma.setting.findFirst(),
+      prisma.article.findMany({
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          excerpt: true,
+          content: true,
+          image: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+      prisma.footerPaymentLogo.findMany({
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+          title: true,
+          image: true,
+          sortOrder: true,
+        },
+        orderBy: [
+          { sortOrder: "asc" },
+          { createdAt: "desc" },
+        ],
+      }),
+    ]);
+
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+    res.json({
+      settings: settings
+        ? {
+            appName: settings.appName,
+            logo: settings.logo,
+            footerDescription: settings.footerDescription,
+            footerEmail: settings.footerEmail,
+            footerPhone: settings.footerPhone,
+            footerWhatsapp: settings.footerWhatsapp,
+            footerAddress: settings.footerAddress,
+            footerPaymentImage: settings.footerPaymentImage,
+            footerSocialInstagram: settings.footerSocialInstagram,
+            footerSocialTiktok: settings.footerSocialTiktok,
+            footerSocialYoutube: settings.footerSocialYoutube,
+            footerSocialTelegram: settings.footerSocialTelegram,
+            footerOperationalHours: settings.footerOperationalHours,
+            waGatewaySender: settings.waGatewaySender,
+          }
+        : null,
+      articles,
+      footerPaymentLogos,
+    });
+  } catch (error) {
+    sendServerError(res, error);
+  }
+});
+
+app.get("/api/articles/:slug", async (req, res) => {
+  try {
+    const [settings, article, footerPaymentLogos] = await Promise.all([
+      prisma.setting.findFirst(),
+      prisma.article.findFirst({
+        where: {
+          slug: req.params.slug,
+          isActive: true,
+        },
+      }),
+      prisma.footerPaymentLogo.findMany({
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+          title: true,
+          image: true,
+          sortOrder: true,
+        },
+        orderBy: [
+          { sortOrder: "asc" },
+          { createdAt: "desc" },
+        ],
+      }),
+    ]);
+
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+    res.json({
+      settings: settings
+        ? {
+            appName: settings.appName,
+            logo: settings.logo,
+            footerDescription: settings.footerDescription,
+            footerEmail: settings.footerEmail,
+            footerPhone: settings.footerPhone,
+            footerWhatsapp: settings.footerWhatsapp,
+            footerAddress: settings.footerAddress,
+            footerPaymentImage: settings.footerPaymentImage,
+            footerSocialInstagram: settings.footerSocialInstagram,
+            footerSocialTiktok: settings.footerSocialTiktok,
+            footerSocialYoutube: settings.footerSocialYoutube,
+            footerSocialTelegram: settings.footerSocialTelegram,
+            footerOperationalHours: settings.footerOperationalHours,
+            waGatewaySender: settings.waGatewaySender,
+          }
+        : null,
+      article,
+      footerPaymentLogos,
+    });
+  } catch (error) {
+    sendServerError(res, error);
+  }
+});
+
 app.get(
   "/api/content/admin",
   authMiddleware,

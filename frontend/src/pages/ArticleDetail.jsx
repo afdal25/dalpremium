@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import PublicTopBar from "../components/PublicTopBar";
-import PublicFooter from "../components/PublicFooter";
-import WhatsAppWidget from "../components/WhatsAppWidget";
 import api from "../services/api";
-import { assetUrl as imageUrl } from "../utils/url";
+import { imageSrcSet, optimizedImageUrl } from "../utils/url";
+
+const PublicFooter = lazy(() => import("../components/PublicFooter"));
+const WhatsAppWidget = lazy(() =>
+  import("../components/WhatsAppWidget")
+);
 
 const paragraphs = (text = "") =>
   text
@@ -14,7 +17,7 @@ const paragraphs = (text = "") =>
 
 export default function ArticleDetail() {
   const { slug } = useParams();
-  const [articles, setArticles] = useState([]);
+  const [article, setArticle] = useState(null);
   const [settings, setSettings] = useState(null);
   const [paymentLogos, setPaymentLogos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,10 +27,10 @@ export default function ArticleDetail() {
 
     const loadContent = async () => {
       try {
-        const response = await api.get("/content");
+        const response = await api.get(`/articles/${slug}`);
 
         if (isMounted) {
-          setArticles(response.data.articles || []);
+          setArticle(response.data.article || null);
           setSettings(response.data.settings);
           setPaymentLogos(response.data.footerPaymentLogos || []);
         }
@@ -43,12 +46,7 @@ export default function ArticleDetail() {
     return () => {
       isMounted = false;
     };
-  }, []);
-
-  const article = useMemo(
-    () => articles.find((item) => item.slug === slug),
-    [articles, slug]
-  );
+  }, [slug]);
 
   if (loading) {
     return (
@@ -74,14 +72,16 @@ export default function ArticleDetail() {
             Kembali ke Artikel
           </Link>
         </main>
-        <PublicFooter
-          logo={settings?.logo}
-          settings={settings}
-          paymentLogos={paymentLogos}
-        />
-        <WhatsAppWidget
-          phone={settings?.footerWhatsapp || settings?.waGatewaySender || "083897585959"}
-        />
+        <Suspense fallback={null}>
+          <PublicFooter
+            logo={settings?.logo}
+            settings={settings}
+            paymentLogos={paymentLogos}
+          />
+          <WhatsAppWidget
+            phone={settings?.footerWhatsapp || settings?.waGatewaySender || "083897585959"}
+          />
+        </Suspense>
       </div>
     );
   }
@@ -102,8 +102,22 @@ export default function ArticleDetail() {
           {article.image && (
             <div className="aspect-[16/11] bg-black sm:aspect-[16/8]">
               <img
-                src={imageUrl(article.image)}
+                src={optimizedImageUrl(article.image, {
+                  width: 960,
+                  crop: "limit",
+                  quality: "auto:eco",
+                })}
+                srcSet={imageSrcSet(article.image, [420, 720, 960, 1280], {
+                  crop: "limit",
+                  quality: "auto:eco",
+                })}
+                sizes="(max-width: 1024px) 92vw, 960px"
                 alt={article.title}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                width="960"
+                height="540"
                 className="h-full w-full object-cover"
               />
             </div>
@@ -134,14 +148,16 @@ export default function ArticleDetail() {
         </article>
       </main>
 
-      <PublicFooter
-        logo={settings?.logo}
-        settings={settings}
-        paymentLogos={paymentLogos}
-      />
-      <WhatsAppWidget
-        phone={settings?.footerWhatsapp || settings?.waGatewaySender || "083897585959"}
-      />
+      <Suspense fallback={null}>
+        <PublicFooter
+          logo={settings?.logo}
+          settings={settings}
+          paymentLogos={paymentLogos}
+        />
+        <WhatsAppWidget
+          phone={settings?.footerWhatsapp || settings?.waGatewaySender || "083897585959"}
+        />
+      </Suspense>
     </div>
   );
 }

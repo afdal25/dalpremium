@@ -54,3 +54,14 @@ export const optimizedImageUrl = (
 
   return url.replace("/upload/", `/upload/${transforms.join(",")}/`);
 };
+
+export const imageSrcSet = (path, widths, options = {}) =>
+  widths
+    .map(
+      (width) =>
+        `${optimizedImageUrl(path, {
+          ...options,
+          width,
+        })} ${width}w`
+    )
+    .join(", ");
