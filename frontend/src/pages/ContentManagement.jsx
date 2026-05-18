@@ -771,98 +771,140 @@ export default function ContentManagement() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-[#d5a756]/15 bg-[#17130f] p-5">
-        <h2 className="text-xl font-black">Metode Pembayaran</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <input
-            value={paymentForm.name}
-            onChange={(event) =>
-              setPaymentForm({
-                ...paymentForm,
-                name: event.target.value,
-              })
-            }
-            placeholder="Nama metode, contoh BCA / DANA"
-            className="h-11 rounded-lg border border-white/10 bg-black/30 px-3 outline-none focus:border-[#d5a756]"
-          />
-          <input
-            value={paymentForm.accountNumber}
-            onChange={(event) =>
-              setPaymentForm({
-                ...paymentForm,
-                accountNumber: event.target.value,
-              })
-            }
-            placeholder="Nomor rekening / nomor e-wallet"
-            className="h-11 rounded-lg border border-white/10 bg-black/30 px-3 outline-none focus:border-[#d5a756]"
-          />
-          <input
-            value={paymentForm.accountName}
-            onChange={(event) =>
-              setPaymentForm({
-                ...paymentForm,
-                accountName: event.target.value,
-              })
-            }
-            placeholder="Atas nama"
-            className="h-11 rounded-lg border border-white/10 bg-black/30 px-3 outline-none focus:border-[#d5a756]"
-          />
-          <input
-            type="number"
-            value={paymentForm.sortOrder}
-            onChange={(event) =>
-              setPaymentForm({
-                ...paymentForm,
-                sortOrder: event.target.value,
-              })
-            }
-            placeholder="Urutan"
-            className="h-11 rounded-lg border border-white/10 bg-black/30 px-3 outline-none focus:border-[#d5a756]"
-          />
-          <textarea
-            value={paymentForm.instructions}
-            onChange={(event) =>
-              setPaymentForm({
-                ...paymentForm,
-                instructions: event.target.value,
-              })
-            }
-            placeholder="Instruksi tambahan"
-            className="min-h-24 rounded-lg border border-white/10 bg-black/30 px-3 py-3 outline-none focus:border-[#d5a756] md:col-span-2"
-          />
-          <label className="rounded-lg border border-dashed border-[#d5a756]/25 bg-black/20 p-4 text-sm text-zinc-300">
-            <span className="block font-bold text-[#f0cf87]">
-              Logo rekening / e-wallet
-            </span>
-            <span className="mt-1 block text-xs text-zinc-500">
-              Dipakai di pilihan metode pembayaran.
-            </span>
-            <FilePicker
-              file={paymentLogoFile}
-              onChange={setPaymentLogoFile}
-              className="mt-3"
-            />
-          </label>
-          <label className="rounded-lg border border-dashed border-[#d5a756]/25 bg-black/20 p-4 text-sm text-zinc-300">
-            <span className="block font-bold text-[#f0cf87]">
-              Foto QRIS
-            </span>
-            <span className="mt-1 block text-xs text-zinc-500">
-              Opsional, tampil saat customer memilih QRIS.
-            </span>
-            <FilePicker
-              file={paymentQrisFile}
-              onChange={setPaymentQrisFile}
-              className="mt-3"
-            />
-          </label>
+      <section className="rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-5 shadow-2xl shadow-black/20">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-[#d5a756]">
+              Pembayaran
+            </p>
+            <h2 className="text-2xl font-black">Metode Pembayaran</h2>
+            <p className="mt-1 text-sm text-zinc-400">
+              Upload foto QRIS untuk metode QRIS. Kosongkan foto QRIS untuk transfer bank atau e-wallet.
+            </p>
+          </div>
+          <span className="w-fit rounded-full border border-[#d5a756]/20 bg-[#d5a756]/10 px-3 py-1 text-xs font-black text-[#f0cf87]">
+            {content.paymentMethods.length} metode aktif
+          </span>
         </div>
-        <div className="mt-4 flex gap-2">
+
+        <div className="mt-5 rounded-2xl border border-[#d5a756]/15 bg-black/20 p-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="block">
+              <span className="mb-2 block text-xs font-bold uppercase text-zinc-500">
+                Nama metode
+              </span>
+              <input
+                value={paymentForm.name}
+                onChange={(event) =>
+                  setPaymentForm({
+                    ...paymentForm,
+                    name: event.target.value,
+                  })
+                }
+                placeholder="Contoh: QRIS / BCA / DANA"
+                className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-3 outline-none focus:border-[#d5a756]"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-xs font-bold uppercase text-zinc-500">
+                Nomor tujuan
+              </span>
+              <input
+                value={paymentForm.accountNumber}
+                onChange={(event) =>
+                  setPaymentForm({
+                    ...paymentForm,
+                    accountNumber: event.target.value,
+                  })
+                }
+                placeholder="Nomor rekening / nomor e-wallet / ID QRIS"
+                className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-3 outline-none focus:border-[#d5a756]"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-xs font-bold uppercase text-zinc-500">
+                Atas nama
+              </span>
+              <input
+                value={paymentForm.accountName}
+                onChange={(event) =>
+                  setPaymentForm({
+                    ...paymentForm,
+                    accountName: event.target.value,
+                  })
+                }
+                placeholder="Nama pemilik rekening"
+                className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-3 outline-none focus:border-[#d5a756]"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-xs font-bold uppercase text-zinc-500">
+                Urutan tampil
+              </span>
+              <input
+                type="number"
+                value={paymentForm.sortOrder}
+                onChange={(event) =>
+                  setPaymentForm({
+                    ...paymentForm,
+                    sortOrder: event.target.value,
+                  })
+                }
+                placeholder="0"
+                className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-3 outline-none focus:border-[#d5a756]"
+              />
+            </label>
+            <label className="block md:col-span-2">
+              <span className="mb-2 block text-xs font-bold uppercase text-zinc-500">
+                Instruksi tambahan
+              </span>
+              <textarea
+                value={paymentForm.instructions}
+                onChange={(event) =>
+                  setPaymentForm({
+                    ...paymentForm,
+                    instructions: event.target.value,
+                  })
+                }
+                placeholder="Contoh: Transfer sesuai total pembayaran, lalu upload bukti bayar."
+                className="min-h-24 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 outline-none focus:border-[#d5a756]"
+              />
+            </label>
+            <label className="rounded-xl border border-dashed border-[#d5a756]/25 bg-[#0f0d0a] p-4 text-sm text-zinc-300">
+              <span className="block font-black text-[#f0cf87]">
+                Logo metode
+              </span>
+              <span className="mt-1 block text-xs text-zinc-500">
+                Logo bank, e-wallet, atau QRIS untuk kartu pilihan pembayaran.
+              </span>
+              <FilePicker
+                file={paymentLogoFile}
+                onChange={setPaymentLogoFile}
+                className="mt-3"
+              />
+            </label>
+            <label className="rounded-xl border border-dashed border-[#d5a756]/25 bg-[#0f0d0a] p-4 text-sm text-zinc-300">
+              <span className="block font-black text-[#f0cf87]">
+                Foto QRIS
+              </span>
+              <span className="mt-1 block text-xs text-zinc-500">
+                Isi hanya untuk QRIS. Jika kosong, customer akan melihat detail rekening/nomor tujuan.
+              </span>
+              <FilePicker
+                file={paymentQrisFile}
+                onChange={setPaymentQrisFile}
+                className="mt-3"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={savePayment}
             disabled={loading}
-            className="rounded-lg bg-[#d5a756] px-5 py-3 font-black text-[#14100b] disabled:opacity-60"
+            className="rounded-xl bg-[#d5a756] px-5 py-3 font-black text-[#14100b] transition hover:bg-[#f0cf87] disabled:opacity-60"
           >
             {editingPaymentId
               ? "Update Metode"
@@ -872,49 +914,84 @@ export default function ContentManagement() {
             <button
               type="button"
               onClick={resetPayment}
-              className="rounded-lg border border-white/10 px-5 py-3 font-black text-zinc-200"
+              className="rounded-xl border border-white/10 px-5 py-3 font-black text-zinc-200 transition hover:border-[#d5a756]/50 hover:text-white"
             >
               Batal
             </button>
           )}
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
           {content.paymentMethods.map((method) => (
             <div
               key={method.id}
-              className="rounded-lg border border-white/10 bg-black/20 p-4"
+              className="overflow-hidden rounded-2xl border border-[#d5a756]/15 bg-black/25"
             >
-              <p className="text-lg font-black">{method.name}</p>
-              <p className="mt-1 text-sm text-zinc-400">
-                {method.accountNumber} a/n {method.accountName}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-3">
-                {method.logo && (
-                  <img
-                    src={imageUrl(method.logo)}
-                    alt={method.name}
-                    className="h-14 w-20 rounded-lg border border-white/10 bg-white object-contain p-2"
-                  />
-                )}
-                {method.qrisImage && (
-                  <img
-                    src={imageUrl(method.qrisImage)}
-                    alt={`${method.name} QRIS`}
-                    className="h-20 w-20 rounded-lg border border-white/10 bg-white object-contain p-1"
-                  />
-                )}
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white text-sm font-black text-[#14100b]">
+                    {method.logo ? (
+                      <img
+                        src={imageUrl(method.logo)}
+                        alt={method.name}
+                        className="h-full w-full object-contain p-2"
+                      />
+                    ) : (
+                      "PAY"
+                    )}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-black">
+                      {method.name}
+                    </p>
+                    <p className="mt-1 truncate text-sm text-zinc-400">
+                      a/n {method.accountName}
+                    </p>
+                  </div>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-black ${
+                    method.qrisImage
+                      ? "bg-emerald-500/10 text-emerald-300"
+                      : "bg-[#d5a756]/10 text-[#f0cf87]"
+                  }`}
+                >
+                  {method.qrisImage ? "QRIS" : "Transfer"}
+                </span>
               </div>
-              {method.instructions && (
-                <p className="mt-2 text-sm text-zinc-500">
-                  {method.instructions}
-                </p>
-              )}
-              <div className="mt-4 flex gap-2">
+              <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_120px]">
+                <div className="min-w-0 rounded-xl border border-white/10 bg-[#0f0d0a] p-4">
+                  <p className="text-xs font-bold uppercase text-zinc-500">
+                    Nomor tujuan
+                  </p>
+                  <p className="mt-2 break-all text-xl font-black text-[#f0cf87]">
+                    {method.accountNumber}
+                  </p>
+                  {method.instructions && (
+                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-zinc-400">
+                      {method.instructions}
+                    </p>
+                  )}
+                </div>
+                <div className="flex min-h-28 items-center justify-center rounded-xl border border-white/10 bg-white p-2">
+                  {method.qrisImage ? (
+                    <img
+                      src={imageUrl(method.qrisImage)}
+                      alt={`${method.name} QRIS`}
+                      className="max-h-28 w-full object-contain"
+                    />
+                  ) : (
+                    <div className="text-center text-xs font-black uppercase tracking-wide text-[#14100b]">
+                      Detail rekening
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2 border-t border-white/10 p-4">
                 <button
                   type="button"
                   onClick={() => editPayment(method)}
-                  className="rounded-lg border border-[#d5a756]/25 px-4 py-2 text-sm font-bold text-[#f0cf87]"
+                  className="rounded-lg border border-[#d5a756]/25 px-4 py-2 text-sm font-bold text-[#f0cf87] transition hover:bg-[#d5a756]/10"
                 >
                   Edit
                 </button>
@@ -923,7 +1000,7 @@ export default function ContentManagement() {
                   onClick={() =>
                     deleteItem("payment-methods", method.id)
                   }
-                  className="rounded-lg border border-red-500/25 px-4 py-2 text-sm font-bold text-red-300"
+                  className="rounded-lg border border-red-500/25 px-4 py-2 text-sm font-bold text-red-300 transition hover:bg-red-500/10"
                 >
                   Hapus
                 </button>
