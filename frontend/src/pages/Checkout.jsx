@@ -107,6 +107,7 @@ export default function Checkout() {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] =
     useState("");
+  const [previewQrisImage, setPreviewQrisImage] = useState("");
 
   const [form, setForm] = useState(() => {
     try {
@@ -613,17 +614,27 @@ export default function Checkout() {
                         </div>
                       </div>
 
-                      <img
-                        src={optimizedImageUrl(selectedPaymentMethod.qrisImage, {
-                          width: 640,
-                          crop: "limit",
-                          quality: "auto:eco",
-                        })}
-                        alt={`${selectedPaymentMethod.name} QRIS`}
-                        loading="lazy"
-                        decoding="async"
-                        className="mt-4 max-h-[420px] w-full rounded-xl border border-white/10 bg-white object-contain p-3"
-                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPreviewQrisImage(
+                            selectedPaymentMethod.qrisImage
+                          )
+                        }
+                        className="mt-4 block w-full overflow-hidden rounded-xl border border-white/10 bg-white p-3 transition hover:scale-[1.01] hover:border-[#d5a756]"
+                      >
+                        <img
+                          src={optimizedImageUrl(selectedPaymentMethod.qrisImage, {
+                            width: 640,
+                            crop: "limit",
+                            quality: "auto:eco",
+                          })}
+                          alt={`${selectedPaymentMethod.name} QRIS`}
+                          loading="lazy"
+                          decoding="async"
+                          className="max-h-[420px] w-full object-contain"
+                        />
+                      </button>
                     </div>
                   ) : (
                     <div>
@@ -779,6 +790,25 @@ export default function Checkout() {
           <WhatsAppWidget phone={settings?.footerWhatsapp || settings?.waGatewaySender} />
         </Suspense>
       </div>
+
+      {previewQrisImage && (
+        <button
+          type="button"
+          onClick={() => setPreviewQrisImage("")}
+          className="fixed inset-0 z-[80] flex cursor-zoom-out items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+          aria-label="Tutup preview QRIS"
+        >
+          <img
+            src={optimizedImageUrl(previewQrisImage, {
+              width: 1200,
+              crop: "limit",
+              quality: "auto:good",
+            })}
+            alt="Preview QRIS"
+            className="max-h-[90vh] max-w-[95vw] rounded-2xl bg-white object-contain p-3 shadow-2xl"
+          />
+        </button>
+      )}
     </div>
   );
 }
