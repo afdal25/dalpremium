@@ -38,7 +38,9 @@ const fallbackMethods = [
 export default function Payment() {
   const { id } = useParams();
   const location = useLocation();
-  const token = new URLSearchParams(location.search).get("token");
+  const query = new URLSearchParams(location.search);
+  const token = query.get("token");
+  const lockedMethodId = query.get("method");
 
   const [paymentProof, setPaymentProof] = useState(null);
   const [order, setOrder] = useState(null);
@@ -69,7 +71,9 @@ export default function Payment() {
           setOrder(orderResponse.data);
           setMethods(methodsResponse.data);
           setSettings(contentResponse.data.settings);
-          setSelectedMethodId(methodsResponse.data[0]?.id || null);
+          setSelectedMethodId(
+            lockedMethodId || methodsResponse.data[0]?.id || null
+          );
           if (orderResponse.data.paymentGatewayUrl) {
             setGatewayPayment({
               vendor: orderResponse.data.paymentGatewayVendor,
@@ -91,17 +95,17 @@ export default function Payment() {
     return () => {
       isMounted = false;
     };
-  }, [id, token]);
+  }, [id, token, lockedMethodId]);
 
   const selectedMethod = methods.find(
-    (method) => method.id === selectedMethodId
+    (method) => String(method.id) === String(selectedMethodId)
   );
   const paymentMethods =
     methods.length > 0 ? methods : fallbackMethods;
   const activeMethod =
     selectedMethod ||
     paymentMethods.find(
-      (method) => method.id === selectedMethodId
+      (method) => String(method.id) === String(selectedMethodId)
     ) ||
     paymentMethods[0];
   const showGatewayPayment =
@@ -171,7 +175,7 @@ export default function Payment() {
             Pembayaran
           </p>
           <h1 className="mt-1 text-3xl font-black">
-            Pilih Metode Pembayaran
+            Pembayaran
           </h1>
           <p className="mt-2 text-zinc-400">
             Transfer sesuai total, lalu upload bukti pembayaran.
@@ -221,48 +225,61 @@ export default function Payment() {
           )}
 
           <div className="mt-6 grid gap-3">
-            {paymentMethods.map((method) => (
-              <button
-                type="button"
-                key={method.id}
-                onClick={() => setSelectedMethodId(method.id)}
-                className={`rounded-xl border p-5 text-left transition ${
-                  selectedMethodId === method.id ||
-                  (!selectedMethodId &&
-                    method.id === paymentMethods[0]?.id)
-                    ? "border-[#d5a756] bg-[#d5a756]/10"
-                    : "border-white/10 bg-black/20 hover:border-[#d5a756]/50"
+            {(lockedMethodId && activeMethod
+              ? [activeMethod]
+              : paymentMethods
+            ).map((method) => {
+              const active =
+                String(selectedMethodId) === String(method.id) ||
+                (!selectedMethodId &&
+                  method.id === paymentMethods[0]?.id);
+              const CardTag = lockedMethodId ? "div" : "button";
+
+              return (
+                <CardTag
+                  type={lockedMethodId ? undefined : "button"}
+                  key={method.id}
+                  onClick={
+                    lockedMethodId
+                      ? undefined
+                      : () => setSelectedMethodId(method.id)
+                  }
+                  className={`rounded-xl border p-5 text-left transition ${
+                    active
+                      ? "border-[#d5a756] bg-[#d5a756]/10"
+                      : "border-white/10 bg-black/20 hover:border-[#d5a756]/50"
                   }`}
-              >
-                <div className="flex items-center gap-4">
-                  <span className="flex h-14 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white text-lg font-black text-[#14100b]">
-                    {method.logo ? (
-                      <img
-                        src={imageUrl(method.logo)}
-                        alt={method.name}
-                        className="h-full w-full object-contain p-2"
-                      />
-                    ) : (
-                      method.name?.charAt(0)
-                    )}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-xl font-black">{method.name}</p>
-                    <p className="mt-1 text-sm text-zinc-400">
-                      a/n {method.accountName}
-                    </p>
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="flex h-14 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white text-lg font-black text-[#14100b]">
+                      {method.logo ? (
+                        <img
+                          src={imageUrl(method.logo)}
+                          alt={method.name}
+                          className="h-full w-full object-contain p-2"
+                        />
+                      ) : (
+                        method.name?.charAt(0)
+                      )}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xl font-black">{method.name}</p>
+                      <p className="mt-1 text-sm text-zinc-400">
+                        a/n {method.accountName}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <p className="mt-2 text-2xl font-black text-[#f0cf87]">
-                  {method.accountNumber}
-                </p>
-                {method.instructions && (
-                  <p className="mt-3 text-sm leading-6 text-zinc-300">
-                    {method.instructions}
+                  <p className="mt-2 text-2xl font-black text-[#f0cf87]">
+                    {method.accountNumber}
                   </p>
-                )}
-              </button>
-            ))}
+                  {method.instructions && (
+                    <p className="mt-3 text-sm leading-6 text-zinc-300">
+                      {method.instructions}
+                    </p>
+                  )}
+                </CardTag>
+              );
+            })}
           </div>
 
           {activeMethod?.qrisImage && (

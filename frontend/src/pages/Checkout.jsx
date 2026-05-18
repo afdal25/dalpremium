@@ -105,6 +105,8 @@ export default function Checkout() {
     cachedCheckout?.settings || null
   );
   const [paymentMethods, setPaymentMethods] = useState([]);
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] =
+    useState("");
 
   const [form, setForm] = useState(() => {
     try {
@@ -211,7 +213,11 @@ export default function Checkout() {
       .get("/payment-methods")
       .then((response) => {
         if (isMounted) {
-          setPaymentMethods(response.data || []);
+          const methods = response.data || [];
+          setPaymentMethods(methods);
+          setSelectedPaymentMethodId((current) =>
+            current || (methods[0]?.id ? String(methods[0].id) : "")
+          );
         }
       })
       .catch(() => {
@@ -285,6 +291,11 @@ export default function Checkout() {
       return;
     }
 
+    if (paymentMethods.length > 0 && !selectedPaymentMethodId) {
+      toast.error("Pilih metode pembayaran dulu");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -308,7 +319,11 @@ export default function Checkout() {
         toast.error(response.data.paymentGatewayError);
       }
 
-      window.location.href = `/payment/${response.data.order.id}?token=${response.data.order.accessToken}`;
+      const methodQuery = selectedPaymentMethodId
+        ? `&method=${encodeURIComponent(selectedPaymentMethodId)}`
+        : "";
+
+      window.location.href = `/payment/${response.data.order.id}?token=${response.data.order.accessToken}${methodQuery}`;
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
@@ -529,9 +544,15 @@ export default function Checkout() {
               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {paymentMethods.length > 0 ? (
                   paymentMethods.map((method) => (
-                    <div
+                    <button
+                      type="button"
                       key={method.id}
-                      className="rounded-xl border border-white/10 bg-black/25 p-4"
+                      onClick={() => setSelectedPaymentMethodId(String(method.id))}
+                      className={`rounded-xl border p-4 text-left transition ${
+                        String(method.id) === selectedPaymentMethodId
+                          ? "border-[#d5a756] bg-[#d5a756]/10 shadow-lg shadow-[#d5a756]/10"
+                          : "border-white/10 bg-black/25 hover:border-[#d5a756]/60"
+                      }`}
                     >
                       <div className="flex items-center gap-3">
                         {getMethodImage(method) ? (
@@ -559,7 +580,7 @@ export default function Checkout() {
                           </p>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   ))
                 ) : (
                   <p className="col-span-full text-sm text-zinc-400">
