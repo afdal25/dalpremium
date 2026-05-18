@@ -132,6 +132,21 @@ const billingLabel = (durations) => {
 };
 
 const fetchJson = async (path) => {
+  if (
+    path === "/shop" &&
+    typeof window !== "undefined" &&
+    window.__DALPREMIUM_SHOP_PREFETCH__
+  ) {
+    const prefetchedShop = window.__DALPREMIUM_SHOP_PREFETCH__;
+    window.__DALPREMIUM_SHOP_PREFETCH__ = null;
+
+    try {
+      return await prefetchedShop;
+    } catch {
+      // Fall back to the normal request if the early preload failed.
+    }
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`);
 
   if (!response.ok) {

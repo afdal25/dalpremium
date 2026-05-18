@@ -17,6 +17,28 @@
     <title>DALPREMIUM - Aplikasi Premium Murah</title>
     <script>
       document.documentElement.dataset.hash = location.hash.replace("#", "");
+
+      (function () {
+        var isLocalhost = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+        var apiBase = isLocalhost
+          ? "http://localhost:5000/api"
+          : "https://dalpremium-backend.onrender.com/api";
+
+        window.__DALPREMIUM_API_BASE_URL__ = apiBase;
+
+        if (location.pathname === "/" || location.pathname === "/shop") {
+          window.__DALPREMIUM_SHOP_PREFETCH__ = fetch(apiBase + "/shop", {
+            headers: { Accept: "application/json" },
+          }).then(function (response) {
+            if (!response.ok) {
+              throw new Error("Shop preload failed");
+            }
+
+            return response.json();
+          });
+        }
+      })();
+
       try {
         var cachedBanner = localStorage.getItem("dalpremiumFirstBannerImage");
 
