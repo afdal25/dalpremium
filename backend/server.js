@@ -4679,27 +4679,37 @@ app.post(
       }
 
       const slug = createSlug(`${safeName} ${safeDuration || ""} ${safePlan || ""}`);
-      const existingProduct = await prisma.product.findFirst({
+      const existingProducts = await prisma.product.findMany({
         where: {
           name: safeName,
         },
         orderBy: {
           createdAt: "desc",
         },
+        take: 20,
       });
+      const productWithImage = existingProducts.find(
+        (product) => product.image
+      );
+      const productWithDescription = existingProducts.find(
+        (product) => product.description
+      );
+      const productWithCategory = existingProducts.find(
+        (product) => product.categoryId
+      );
       const nextDescription =
         cleanText(description, 1000) ||
-        existingProduct?.description ||
+        productWithDescription?.description ||
         null;
       const nextImage = req.file
         ? await storeUploadedFile(
             req.file,
             "dalpremium/products"
           )
-        : cleanUrl(image) || existingProduct?.image || null;
+        : cleanUrl(image) || productWithImage?.image || null;
       const parsedCategoryId = categoryId
         ? Number(categoryId)
-        : existingProduct?.categoryId || null;
+        : productWithCategory?.categoryId || null;
 
       if (
         parsedCategoryId !== null &&
@@ -4733,6 +4743,11 @@ app.post(
         req.user
       );
 
+      shopResponseCache = {
+        expiresAt: 0,
+        payload: null,
+      };
+
       res.json(product);
     } catch (error) {
       sendServerError(res, error);
@@ -4758,6 +4773,11 @@ app.delete(
         `Menghapus product ${product.name}`,
         req.user
       );
+
+      shopResponseCache = {
+        expiresAt: 0,
+        payload: null,
+      };
 
       res.json({
         message:
@@ -4840,6 +4860,11 @@ app.put(
         `Mengupdate product ${name}`,
         req.user
       );
+
+      shopResponseCache = {
+        expiresAt: 0,
+        payload: null,
+      };
 
       res.json(product);
     } catch (error) {

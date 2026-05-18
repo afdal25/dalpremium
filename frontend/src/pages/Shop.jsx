@@ -557,6 +557,10 @@ export default function Shop() {
         existing.variants.push(product);
         existing.stock += product.stock || 0;
         existing.minPrice = Math.min(existing.minPrice, product.price);
+        existing.description =
+          existing.description || product.description || "";
+        existing.image = existing.image || product.image || "";
+        existing.category = existing.category || product.category;
         existing.durations.add(product.duration || "Durasi fleksibel");
         existing.plans.add(product.plan || "Standar");
       } else {

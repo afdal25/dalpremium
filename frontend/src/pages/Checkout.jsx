@@ -399,7 +399,7 @@ export default function Checkout() {
     );
   }
 
-  const service = variants[0];
+  const service = variants.find((item) => item.image) || variants[0];
 
   return (
     <div className="min-h-screen bg-[#0f0d0a] text-white">
