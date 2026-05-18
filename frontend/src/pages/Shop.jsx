@@ -120,15 +120,7 @@ const billingLabel = (durations) => {
     .join(" ")
     .toLowerCase();
 
-  if (value.includes("hari")) {
-    return "/hari";
-  }
-
-  if (value.includes("tahun")) {
-    return "/tahun";
-  }
-
-  return "/bulan";
+  return value.includes("bulan") ? "/bulan" : "";
 };
 
 const fetchJson = async (path) => {
@@ -890,25 +882,11 @@ export default function Shop() {
                         </div>
                       )}
                       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#17130f] to-transparent" />
-                      <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-                        <span className={`rounded-full px-3 py-1 text-xs font-black ${inStock ? "bg-[#d5a756] text-[#14100b]" : "bg-red-500 text-white"}`}>
-                          {inStock
-                            ? `${t.stock} ${group.stock}`
-                            : t.outOfStock}
-                        </span>
-                        <span className="rounded-full bg-black/70 px-3 py-1 text-xs font-black text-white backdrop-blur">
-                          {group.variants.length} {t.variants}
-                        </span>
-                      </div>
                     </div>
 
                     <div className="p-4">
                       <h3 className="truncate text-xl font-black">{group.name}</h3>
-                      <p className="mt-2 line-clamp-2 min-h-10 text-xs leading-5 text-zinc-400 sm:text-sm">
-                        {group.description || t.chooseAtCheckout}
-                      </p>
-
-                      <div className="mt-3 flex min-h-12 flex-wrap gap-2">
+                      <div className="mt-3 flex min-h-10 flex-wrap gap-2">
                         {Array.from(group.durations)
                           .slice(0, 3)
                           .map((duration) => (
@@ -922,7 +900,9 @@ export default function Shop() {
                         <div className="min-w-0">
                           <p className="text-xs font-semibold text-zinc-400">{t.startsFrom}</p>
                           <p className="text-xl font-black leading-tight text-white sm:text-2xl">{formatRupiah(group.minPrice)}</p>
-                          <p className="mt-0.5 text-xs font-bold text-zinc-300">{billingLabel(group.durations)}</p>
+                          {billingLabel(group.durations) && (
+                            <p className="mt-0.5 text-xs font-bold text-zinc-300">{billingLabel(group.durations)}</p>
+                          )}
                         </div>
 
                         <Link

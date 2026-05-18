@@ -65,6 +65,17 @@ const getCachedCheckoutData = (slug) => {
 const getFirstAvailable = (items) =>
   items.find((item) => item.stock > 0) || items[0];
 
+const formatRupiah = (value) =>
+  `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
+
+const variantTitle = (product) =>
+  [product?.plan, product?.duration]
+    .filter(Boolean)
+    .join(" ") || product?.name || "Paket Premium";
+
+const getMethodImage = (method) =>
+  method?.logo || method?.qrisImage || "";
+
 export default function Checkout() {
   const { slug } = useParams();
   const fallbackTitle = titleFromSlug(slug);
@@ -93,6 +104,7 @@ export default function Checkout() {
   const [settings, setSettings] = useState(
     cachedCheckout?.settings || null
   );
+  const [paymentMethods, setPaymentMethods] = useState([]);
 
   const [form, setForm] = useState(() => {
     try {
@@ -192,25 +204,26 @@ export default function Checkout() {
     };
   }, [cachedCheckout, slug]);
 
-  const durations = useMemo(() => {
-    const values = variants.map((item) =>
-      optionLabel(item.duration, "Standar")
-    );
+  useEffect(() => {
+    let isMounted = true;
 
-    return [...new Set(values)];
-  }, [variants]);
+    api
+      .get("/payment-methods")
+      .then((response) => {
+        if (isMounted) {
+          setPaymentMethods(response.data || []);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setPaymentMethods([]);
+        }
+      });
 
-  const plans = useMemo(() => {
-    const values = variants
-      .filter(
-        (item) =>
-          optionLabel(item.duration, "Standar") ===
-          selectedDuration
-      )
-      .map((item) => optionLabel(item.plan, "Standar"));
-
-    return [...new Set(values)];
-  }, [selectedDuration, variants]);
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const selectedProduct = variants.find(
     (item) =>
@@ -219,27 +232,30 @@ export default function Checkout() {
       optionLabel(item.plan, "Standar") === selectedPlan
   );
 
+  const orderedVariants = useMemo(() => {
+    const selectedId = selectedProduct?.id;
+
+    return [...variants].sort((a, b) => {
+      if (a.id === selectedId) return -1;
+      if (b.id === selectedId) return 1;
+      return Number(a.price || 0) - Number(b.price || 0);
+    });
+  }, [selectedProduct?.id, variants]);
+
+  const primaryVariants = orderedVariants.slice(0, 3);
+  const otherVariants = orderedVariants.slice(3);
+
+  const selectVariant = (product) => {
+    setSelectedDuration(optionLabel(product.duration, "Standar"));
+    setSelectedPlan(optionLabel(product.plan, "Standar"));
+  };
+
   const handleChange = (e) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value,
     });
   };
-
-  const hasStock = (duration, plan) =>
-    variants.some(
-      (item) =>
-        optionLabel(item.duration, "Standar") === duration &&
-        optionLabel(item.plan, "Standar") === plan &&
-        item.stock > 0
-    );
-
-  const durationHasStock = (duration) =>
-    variants.some(
-      (item) =>
-        optionLabel(item.duration, "Standar") === duration &&
-        item.stock > 0
-    );
 
   const checkout = async () => {
     if (!selectedProduct) {
@@ -372,225 +388,296 @@ export default function Checkout() {
   return (
     <div className="min-h-screen bg-[#0f0d0a] text-white">
       <PublicTopBar logo={settings?.logo} />
-      <main className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-5 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
-        <section className="rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-6 lg:p-8">
-          <button
-            onClick={() => {
-              window.location.href = "/";
-            }}
-            className="mb-8 text-sm font-semibold text-[#f0cf87] hover:text-white"
-          >
-            Kembali ke shop
-          </button>
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-5 sm:py-10">
+        <button
+          onClick={() => {
+            window.location.href = "/";
+          }}
+          className="mb-6 text-sm font-semibold text-[#f0cf87] hover:text-white"
+        >
+          Kembali ke shop
+        </button>
 
-          <div className="mb-8 flex items-center gap-4">
-            {service.image ? (
-              <img
-                src={optimizedImageUrl(service.image, {
-                  width: 96,
-                  height: 96,
-                  crop: "fill",
-                  quality: "auto:low",
+        <div className="mb-6 flex items-center gap-4">
+          {service.image ? (
+            <img
+              src={optimizedImageUrl(service.image, {
+                width: 96,
+                height: 96,
+                crop: "fill",
+                quality: "auto:low",
+              })}
+              alt={service.name}
+              loading="eager"
+              decoding="async"
+              width="64"
+              height="64"
+              className="h-16 w-16 rounded-xl object-cover"
+            />
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-[#d5a756]/15 text-3xl font-black text-[#d5a756]">
+              {service.name?.charAt(0)}
+            </div>
+          )}
+
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#d5a756]">
+              Pilih Paket
+            </p>
+            <h1 className="truncate text-3xl font-black sm:text-4xl">
+              {service.name}
+            </h1>
+          </div>
+        </div>
+
+        <section className="mb-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            {primaryVariants.map((product) => {
+              const active = product.id === selectedProduct?.id;
+              const inStock = product.stock > 0;
+
+              return (
+                <button
+                  type="button"
+                  key={product.id}
+                  disabled={!inStock}
+                  onClick={() => selectVariant(product)}
+                  className={`min-h-36 rounded-2xl border p-5 text-left transition ${
+                    active
+                      ? "border-[#d5a756] bg-[#d5a756]/10 shadow-lg shadow-[#d5a756]/10"
+                      : "border-white/10 bg-[#17202d] hover:border-[#d5a756]/60"
+                  } ${!inStock ? "opacity-50" : ""}`}
+                >
+                  <div className="flex h-full flex-col justify-between gap-4">
+                    <div>
+                      <h2 className="text-lg font-black text-white">
+                        {variantTitle(product)}
+                      </h2>
+                      <p className="mt-2 text-2xl font-black text-blue-500">
+                        {formatRupiah(product.price)}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className={inStock ? "text-sm font-semibold text-emerald-400" : "text-sm font-semibold text-red-400"}>
+                        {inStock ? "Tersedia" : "Stok habis"}
+                      </span>
+                      <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300">
+                        {product.deliveryType === "INVITE" ? "Invite" : "Akun"}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {otherVariants.length > 0 && (
+            <div className="mt-8">
+              <h2 className="mb-4 text-2xl font-black text-white">
+                Lainnya
+              </h2>
+              <div className="grid gap-4 md:grid-cols-3">
+                {otherVariants.map((product) => {
+                  const active = product.id === selectedProduct?.id;
+                  const inStock = product.stock > 0;
+
+                  return (
+                    <button
+                      type="button"
+                      key={product.id}
+                      disabled={!inStock}
+                      onClick={() => selectVariant(product)}
+                      className={`min-h-32 rounded-2xl border p-5 text-left transition ${
+                        active
+                          ? "border-[#d5a756] bg-[#d5a756]/10"
+                          : "border-white/10 bg-[#17202d] hover:border-[#d5a756]/60"
+                      } ${!inStock ? "opacity-50" : ""}`}
+                    >
+                      <h3 className="font-black">
+                        {variantTitle(product)}
+                      </h3>
+                      <p className="mt-2 text-2xl font-black text-blue-500">
+                        {formatRupiah(product.price)}
+                      </p>
+                      <p className={inStock ? "mt-3 text-sm font-semibold text-emerald-400" : "mt-3 text-sm font-semibold text-red-400"}>
+                        {inStock ? "Tersedia" : "Stok habis"}
+                      </p>
+                    </button>
+                  );
                 })}
-                alt={service.name}
-                loading="eager"
-                decoding="async"
-                width="64"
-                height="64"
-                className="h-16 w-16 rounded-lg object-cover"
-              />
-            ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-[#d5a756]/15 text-3xl font-black text-[#d5a756]">
-                {service.name?.charAt(0)}
               </div>
-            )}
-
-            <div>
-              <p className="text-sm font-semibold text-[#d5a756]">
-                Pilih Langganan
-              </p>
-              <h1 className="text-3xl font-bold sm:text-4xl">
-                {service.name}
-              </h1>
             </div>
-          </div>
-
-          <div className="mb-8">
-            <p className="mb-3 text-xl font-bold">
-              Pilih Durasi
-            </p>
-
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {durations.map((duration) => {
-                const disabled = !durationHasStock(duration);
-
-                return (
-                  <button
-                    key={duration}
-                    disabled={disabled}
-                    onClick={() => {
-                      setSelectedDuration(duration);
-                      const firstPlan = variants.find(
-                        (item) =>
-                          optionLabel(
-                            item.duration,
-                            "Standar"
-                          ) === duration &&
-                          item.stock > 0
-                      );
-
-                      setSelectedPlan(
-                        optionLabel(firstPlan?.plan, "Standar")
-                      );
-                    }}
-                    className={`rounded-lg border px-5 py-4 font-semibold transition ${
-                      selectedDuration === duration
-                        ? "border-[#d5a756] bg-[#d5a756]/10 text-white"
-                        : "border-white/10 bg-black/30 text-zinc-300 hover:border-[#d5a756]/50"
-                    } disabled:cursor-not-allowed disabled:opacity-40`}
-                  >
-                    {duration}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <p className="mb-3 text-xl font-bold">
-              Pilih Jenis Paket
-            </p>
-
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {plans.map((plan) => {
-                const disabled = !hasStock(
-                  selectedDuration,
-                  plan
-                );
-
-                return (
-                  <button
-                    key={plan}
-                    disabled={disabled}
-                    onClick={() => setSelectedPlan(plan)}
-                    className={`rounded-lg border px-5 py-4 font-semibold transition ${
-                      selectedPlan === plan
-                        ? "border-[#d5a756] bg-[#d5a756]/10 text-white"
-                        : "border-white/10 bg-black/30 text-zinc-300 hover:border-[#d5a756]/50"
-                    } disabled:cursor-not-allowed disabled:opacity-40`}
-                  >
-                    {plan}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <input
-              name="customerName"
-              placeholder="Nama customer"
-              value={form.customerName}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-white/10 bg-black/30 p-3 outline-none focus:border-[#d5a756]"
-            />
-
-            <input
-              name="customerPhone"
-              placeholder="Nomor HP / WhatsApp"
-              value={form.customerPhone}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-white/10 bg-black/30 p-3 outline-none focus:border-[#d5a756]"
-            />
-
-            <input
-              name="customerEmail"
-              placeholder="Email kontak"
-              value={form.customerEmail}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-white/10 bg-black/30 p-3 outline-none focus:border-[#d5a756]"
-            />
-
-            {selectedProduct?.deliveryType === "INVITE" && (
-              <input
-                name="targetEmail"
-                placeholder="Email yang mau dipremiumkan"
-                value={form.targetEmail}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-white/10 bg-black/30 p-3 outline-none focus:border-[#d5a756]"
-              />
-            )}
-          </div>
+          )}
         </section>
 
-        <aside className="h-fit rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-6 lg:sticky lg:top-8">
-          <h2 className="mb-6 text-2xl font-bold">
-            Rincian
-          </h2>
-
-          <div className="space-y-4 text-sm">
-            <div className="flex justify-between gap-6">
-              <span className="text-zinc-400">
-                Layanan
-              </span>
-              <span className="text-right font-semibold">
-                {service.name} {selectedPlan}{" "}
-                {selectedDuration}
-              </span>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+          <section className="space-y-6">
+            <div className="rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-6">
+              <h2 className="text-xl font-black text-[#d5a756]">
+                Keterangan
+              </h2>
+              <p className="mt-3 whitespace-pre-line text-sm leading-7 text-zinc-300">
+                {selectedProduct?.description ||
+                  "Pilih paket sesuai kebutuhan. Pesanan diproses setelah pembayaran berhasil dikonfirmasi admin."}
+              </p>
             </div>
 
-            <div className="flex justify-between gap-6">
-              <span className="text-zinc-400">
-                Harga
-              </span>
-              <span className="font-semibold">
-                Rp{" "}
-                {Number(
-                  selectedProduct?.price || 0
-                ).toLocaleString()}
-              </span>
-            </div>
-
-            <div className="flex justify-between gap-6">
-              <span className="text-zinc-400">
-                Stok
-              </span>
-              <span
-                className={
-                  selectedProduct?.stock > 0
-                    ? "font-semibold text-emerald-300"
-                    : "font-semibold text-red-300"
-                }
-              >
-                {selectedProduct?.stock || 0}
-              </span>
-            </div>
-
-            <div className="border-t border-white/10 pt-4">
-              <div className="flex justify-between gap-6 text-lg">
-                <span>Total</span>
-                <span className="font-bold">
-                  Rp{" "}
-                  {Number(
-                    selectedProduct?.price || 0
-                  ).toLocaleString()}
-                </span>
+            <div className="rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-6">
+              <h2 className="text-xl font-black text-[#d5a756]">
+                Metode Pembayaran
+              </h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {paymentMethods.length > 0 ? (
+                  paymentMethods.map((method) => (
+                    <div
+                      key={method.id}
+                      className="rounded-xl border border-white/10 bg-black/25 p-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        {getMethodImage(method) ? (
+                          <img
+                            src={optimizedImageUrl(getMethodImage(method), {
+                              width: 96,
+                              height: 48,
+                              crop: "fit",
+                              quality: "auto:low",
+                            })}
+                            alt={method.name}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-10 w-16 rounded bg-white object-contain p-1"
+                          />
+                        ) : (
+                          <div className="flex h-10 w-16 items-center justify-center rounded bg-[#d5a756]/15 text-xs font-black text-[#d5a756]">
+                            PAY
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate font-black">{method.name}</p>
+                          <p className="truncate text-xs text-zinc-400">
+                            {method.accountName || "DALPREMIUM"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="col-span-full text-sm text-zinc-400">
+                    Metode pembayaran akan muncul setelah admin mengaktifkannya.
+                  </p>
+                )}
               </div>
             </div>
-          </div>
 
-          <button
-            onClick={checkout}
-            disabled={
-              loading ||
-              !selectedProduct ||
-              selectedProduct.stock <= 0
-            }
-            className="mt-8 w-full rounded-lg bg-[#d5a756] px-5 py-4 font-bold text-[#14100b] transition hover:bg-[#f0cf87] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? "Loading..." : "Pesan"}
-          </button>
-        </aside>
+            <div className="rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-6">
+              <h2 className="text-xl font-black text-[#d5a756]">
+                Detail Kontak
+              </h2>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <input
+                  name="customerName"
+                  placeholder="Nama customer"
+                  value={form.customerName}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-white/10 bg-black/30 p-3 outline-none focus:border-[#d5a756]"
+                />
+
+                <input
+                  name="customerPhone"
+                  placeholder="Nomor HP / WhatsApp"
+                  value={form.customerPhone}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-white/10 bg-black/30 p-3 outline-none focus:border-[#d5a756]"
+                />
+
+                <input
+                  name="customerEmail"
+                  placeholder="Email kontak"
+                  value={form.customerEmail}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-white/10 bg-black/30 p-3 outline-none focus:border-[#d5a756]"
+                />
+
+                {selectedProduct?.deliveryType === "INVITE" && (
+                  <input
+                    name="targetEmail"
+                    placeholder="Email yang ingin dipremiumkan"
+                    value={form.targetEmail}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-white/10 bg-black/30 p-3 outline-none focus:border-[#d5a756]"
+                  />
+                )}
+              </div>
+            </div>
+          </section>
+
+          <aside className="h-fit rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-6 lg:sticky lg:top-24">
+            <h2 className="mb-6 text-2xl font-bold">
+              Rincian
+            </h2>
+
+            <div className="space-y-4 text-sm">
+              <div className="flex justify-between gap-6">
+                <span className="text-zinc-400">
+                  Layanan
+                </span>
+                <span className="text-right font-semibold">
+                  {service.name}
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-6">
+                <span className="text-zinc-400">
+                  Paket
+                </span>
+                <span className="text-right font-semibold">
+                  {variantTitle(selectedProduct)}
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-6">
+                <span className="text-zinc-400">
+                  Harga
+                </span>
+                <span className="font-semibold">
+                  {formatRupiah(selectedProduct?.price)}
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-6">
+                <span className="text-zinc-400">
+                  Tipe
+                </span>
+                <span className="font-semibold">
+                  {selectedProduct?.deliveryType === "INVITE"
+                    ? "Via Invite"
+                    : "Kirim Akun"}
+                </span>
+              </div>
+
+              <div className="border-t border-white/10 pt-4">
+                <div className="flex justify-between gap-6 text-lg">
+                  <span>Total</span>
+                  <span className="font-bold">
+                    {formatRupiah(selectedProduct?.price)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={checkout}
+              disabled={
+                loading ||
+                !selectedProduct ||
+                selectedProduct.stock <= 0
+              }
+              className="mt-8 w-full rounded-lg bg-[#d5a756] px-5 py-4 font-bold text-[#14100b] transition hover:bg-[#f0cf87] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Loading..." : "Pesan Sekarang"}
+            </button>
+          </aside>
+        </div>
       </main>
       <div className="min-h-72">
         <Suspense fallback={null}>
