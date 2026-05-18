@@ -446,86 +446,6 @@ export default function Checkout() {
           </div>
         </div>
 
-        <section className="mb-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            {primaryVariants.map((product) => {
-              const active = product.id === selectedProduct?.id;
-              const inStock = product.stock > 0;
-
-              return (
-                <button
-                  type="button"
-                  key={product.id}
-                  disabled={!inStock}
-                  onClick={() => selectVariant(product)}
-                  className={`min-h-36 rounded-2xl border p-5 text-left transition ${
-                    active
-                      ? "border-[#d5a756] bg-[#d5a756]/10 shadow-lg shadow-[#d5a756]/10"
-                      : "border-white/10 bg-[#17202d] hover:border-[#d5a756]/60"
-                  } ${!inStock ? "opacity-50" : ""}`}
-                >
-                  <div className="flex h-full flex-col justify-between gap-4">
-                    <div>
-                      <h2 className="text-lg font-black text-white">
-                        {variantTitle(product)}
-                      </h2>
-                      <p className="mt-2 text-2xl font-black text-blue-500">
-                        {formatRupiah(product.price)}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className={inStock ? "text-sm font-semibold text-emerald-400" : "text-sm font-semibold text-red-400"}>
-                        {inStock ? "Tersedia" : "Stok habis"}
-                      </span>
-                      <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300">
-                        {product.deliveryType === "INVITE" ? "Invite" : "Akun"}
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {otherVariants.length > 0 && (
-            <div className="mt-8">
-              <h2 className="mb-4 text-2xl font-black text-white">
-                Lainnya
-              </h2>
-              <div className="grid gap-4 md:grid-cols-3">
-                {otherVariants.map((product) => {
-                  const active = product.id === selectedProduct?.id;
-                  const inStock = product.stock > 0;
-
-                  return (
-                    <button
-                      type="button"
-                      key={product.id}
-                      disabled={!inStock}
-                      onClick={() => selectVariant(product)}
-                      className={`min-h-32 rounded-2xl border p-5 text-left transition ${
-                        active
-                          ? "border-[#d5a756] bg-[#d5a756]/10"
-                          : "border-white/10 bg-[#17202d] hover:border-[#d5a756]/60"
-                      } ${!inStock ? "opacity-50" : ""}`}
-                    >
-                      <h3 className="font-black">
-                        {variantTitle(product)}
-                      </h3>
-                      <p className="mt-2 text-2xl font-black text-blue-500">
-                        {formatRupiah(product.price)}
-                      </p>
-                      <p className={inStock ? "mt-3 text-sm font-semibold text-emerald-400" : "mt-3 text-sm font-semibold text-red-400"}>
-                        {inStock ? "Tersedia" : "Stok habis"}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </section>
-
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
           <section className="space-y-6">
             <div className="rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-6">
@@ -536,6 +456,89 @@ export default function Checkout() {
                 {selectedProduct?.description ||
                   "Pilih paket sesuai kebutuhan. Pesanan diproses setelah pembayaran berhasil dikonfirmasi admin."}
               </p>
+            </div>
+
+            <div className="rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-6">
+              <h2 className="text-xl font-black text-[#d5a756]">
+                Pilih Paket
+              </h2>
+              <div className="mt-4 grid gap-4 md:grid-cols-3">
+                {primaryVariants.map((product) => {
+                  const active = product.id === selectedProduct?.id;
+                  const inStock = product.stock > 0;
+
+                  return (
+                    <button
+                      type="button"
+                      key={product.id}
+                      disabled={!inStock}
+                      onClick={() => selectVariant(product)}
+                      className={`min-h-36 rounded-2xl border p-5 text-left transition ${
+                        active
+                          ? "border-[#d5a756] bg-[#d5a756]/10 shadow-lg shadow-[#d5a756]/10"
+                          : "border-white/10 bg-[#17202d] hover:border-[#d5a756]/60"
+                      } ${!inStock ? "opacity-50" : ""}`}
+                    >
+                      <div className="flex h-full flex-col justify-between gap-4">
+                        <div>
+                          <h3 className="text-lg font-black text-white">
+                            {variantTitle(product)}
+                          </h3>
+                          <p className="mt-2 text-2xl font-black text-blue-500">
+                            {formatRupiah(product.price)}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span className={inStock ? "text-sm font-semibold text-emerald-400" : "text-sm font-semibold text-red-400"}>
+                            {inStock ? "Tersedia" : "Stok habis"}
+                          </span>
+                          <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300">
+                            {product.deliveryType === "INVITE" ? "Invite" : "Akun"}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {otherVariants.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="mb-4 text-2xl font-black text-white">
+                    Lainnya
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    {otherVariants.map((product) => {
+                      const active = product.id === selectedProduct?.id;
+                      const inStock = product.stock > 0;
+
+                      return (
+                        <button
+                          type="button"
+                          key={product.id}
+                          disabled={!inStock}
+                          onClick={() => selectVariant(product)}
+                          className={`min-h-32 rounded-2xl border p-5 text-left transition ${
+                            active
+                              ? "border-[#d5a756] bg-[#d5a756]/10"
+                              : "border-white/10 bg-[#17202d] hover:border-[#d5a756]/60"
+                          } ${!inStock ? "opacity-50" : ""}`}
+                        >
+                          <h4 className="font-black">
+                            {variantTitle(product)}
+                          </h4>
+                          <p className="mt-2 text-2xl font-black text-blue-500">
+                            {formatRupiah(product.price)}
+                          </p>
+                          <p className={inStock ? "mt-3 text-sm font-semibold text-emerald-400" : "mt-3 text-sm font-semibold text-red-400"}>
+                            {inStock ? "Tersedia" : "Stok habis"}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-6">
