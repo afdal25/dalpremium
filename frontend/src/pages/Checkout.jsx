@@ -475,24 +475,24 @@ export default function Checkout() {
                       onClick={() => selectVariant(product)}
                       className={`min-h-36 rounded-2xl border p-5 text-left transition ${
                         active
-                          ? "border-[#d5a756] bg-[#d5a756]/10 shadow-lg shadow-[#d5a756]/10"
-                          : "border-white/10 bg-[#17202d] hover:border-[#d5a756]/60"
-                      } ${!inStock ? "opacity-50" : ""}`}
+                          ? "border-[#d5a756] bg-[#2a2114] shadow-lg shadow-[#d5a756]/10"
+                          : "border-[#d5a756]/15 bg-[#100d09] hover:border-[#d5a756]/60 hover:bg-[#1a140e]"
+                      } ${!inStock ? "opacity-65 saturate-75" : ""}`}
                     >
                       <div className="flex h-full flex-col justify-between gap-4">
                         <div>
-                          <h3 className="text-lg font-black text-white">
+                          <h3 className="text-lg font-black text-zinc-100">
                             {variantTitle(product)}
                           </h3>
-                          <p className="mt-2 text-2xl font-black text-blue-500">
+                          <p className="mt-2 text-2xl font-black text-[#f0cf87]">
                             {formatRupiah(product.price)}
                           </p>
                         </div>
                         <div className="flex items-center justify-between gap-3">
-                          <span className={inStock ? "text-sm font-semibold text-emerald-400" : "text-sm font-semibold text-red-400"}>
+                          <span className={inStock ? "text-sm font-semibold text-emerald-300" : "text-sm font-semibold text-red-300"}>
                             {inStock ? "Tersedia" : "Stok habis"}
                           </span>
-                          <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300">
+                          <span className="rounded-full bg-[#d5a756]/10 px-3 py-1 text-xs font-bold text-[#f0cf87]">
                             {product.deliveryType === "INVITE" ? "Invite" : "Akun"}
                           </span>
                         </div>
@@ -504,7 +504,7 @@ export default function Checkout() {
 
               {otherVariants.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="mb-4 text-2xl font-black text-white">
+                  <h3 className="mb-4 text-2xl font-black text-[#d5a756]">
                     Lainnya
                   </h3>
                   <div className="grid gap-4 md:grid-cols-3">
@@ -520,17 +520,17 @@ export default function Checkout() {
                           onClick={() => selectVariant(product)}
                           className={`min-h-32 rounded-2xl border p-5 text-left transition ${
                             active
-                              ? "border-[#d5a756] bg-[#d5a756]/10"
-                              : "border-white/10 bg-[#17202d] hover:border-[#d5a756]/60"
-                          } ${!inStock ? "opacity-50" : ""}`}
+                              ? "border-[#d5a756] bg-[#2a2114]"
+                              : "border-[#d5a756]/15 bg-[#100d09] hover:border-[#d5a756]/60 hover:bg-[#1a140e]"
+                          } ${!inStock ? "opacity-65 saturate-75" : ""}`}
                         >
-                          <h4 className="font-black">
+                          <h4 className="font-black text-zinc-100">
                             {variantTitle(product)}
                           </h4>
-                          <p className="mt-2 text-2xl font-black text-blue-500">
+                          <p className="mt-2 text-2xl font-black text-[#f0cf87]">
                             {formatRupiah(product.price)}
                           </p>
-                          <p className={inStock ? "mt-3 text-sm font-semibold text-emerald-400" : "mt-3 text-sm font-semibold text-red-400"}>
+                          <p className={inStock ? "mt-3 text-sm font-semibold text-emerald-300" : "mt-3 text-sm font-semibold text-red-300"}>
                             {inStock ? "Tersedia" : "Stok habis"}
                           </p>
                         </button>
