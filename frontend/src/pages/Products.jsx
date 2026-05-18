@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../services/api";
 import FilePicker from "../components/FilePicker";
-import { assetUrl as imageUrl } from "../utils/url";
+import { optimizedImageUrl } from "../utils/url";
 import {
   exportRowsToCsv,
   exportRowsToPdf,
@@ -41,7 +41,11 @@ export default function Products() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/products");
+      const response = await api.get("/products", {
+        params: {
+          stock: false,
+        },
+      });
       setProducts(response.data);
     } catch {
       toast.error("Gagal mengambil product");
@@ -67,7 +71,11 @@ export default function Products() {
         setLoading(true);
         const [productsResponse, categoriesResponse] =
           await Promise.all([
-            api.get("/products"),
+            api.get("/products", {
+              params: {
+                stock: false,
+              },
+            }),
             api.get("/product-categories"),
           ]);
 
@@ -95,11 +103,62 @@ export default function Products() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
-    setForm({
+    const nextForm = {
       ...form,
       [name]: type === "checkbox" ? checked : value,
-    });
+    };
+
+    if (name === "name") {
+      const template = products.find(
+        (item) =>
+          item.name.toLowerCase() === value.trim().toLowerCase()
+      );
+
+      if (template) {
+        nextForm.description =
+          nextForm.description || template.description || "";
+        nextForm.image = nextForm.image || template.image || "";
+        nextForm.categoryId =
+          nextForm.categoryId || template.categoryId || "";
+      }
+    }
+
+    setForm(nextForm);
+  };
+
+  const productTemplates = Array.from(
+    products
+      .reduce((templates, item) => {
+        if (!templates.has(item.name)) {
+          templates.set(item.name, item);
+        }
+
+        return templates;
+      }, new Map())
+      .values()
+  );
+
+  const useProductTemplate = (productName) => {
+    if (!productName) {
+      return;
+    }
+
+    const template = productTemplates.find(
+      (item) => item.name === productName
+    );
+
+    if (!template) {
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      name: template.name,
+      description: template.description || "",
+      image: template.image || "",
+      categoryId: template.categoryId || "",
+    }));
+    setImageFile(null);
   };
 
   const handleEditChange = (e) => {
@@ -134,14 +193,14 @@ export default function Products() {
       toast.success("Product berhasil ditambahkan");
 
       setForm({
-        name: "",
+        name: form.name,
         price: "",
         duration: "",
         plan: "",
-        categoryId: "",
-        description: "",
-        image: "",
-        deliveryType: "INVITE",
+        categoryId: form.categoryId,
+        description: form.description,
+        image: form.image,
+        deliveryType: form.deliveryType,
         isActive: true,
       });
       setImageFile(null);
@@ -437,6 +496,36 @@ export default function Products() {
           Tambah Product
         </h2>
 
+        <div className="mb-5 rounded-xl border border-[#d5a756]/15 bg-black/20 p-4">
+          <label className="mb-2 block text-sm font-bold text-[#f0cf87]">
+            Tambah varian dari produk yang sudah ada
+          </label>
+          <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+            <select
+              value=""
+              onChange={(event) => useProductTemplate(event.target.value)}
+              className="min-w-0 rounded-xl border border-zinc-700 bg-zinc-800 p-3"
+            >
+              <option value="">Pilih produk lama untuk isi otomatis deskripsi, logo, kategori</option>
+              {productTemplates.map((product) => (
+                <option key={product.id} value={product.name}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => useProductTemplate(form.name)}
+              className="rounded-xl border border-[#d5a756]/25 px-4 py-3 text-sm font-black text-[#f0cf87] transition hover:bg-[#d5a756]/10"
+            >
+              Isi otomatis
+            </button>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-zinc-400">
+            Kalau nama produk sama, backend juga akan memakai deskripsi, logo, dan kategori dari produk terakhir meski kolom itu dikosongkan.
+          </p>
+        </div>
+
         <div className="grid gap-5 md:grid-cols-2">
           <input
             name="name"
@@ -621,15 +710,15 @@ export default function Products() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-x-auto">
         <table className="product-table">
           <colgroup>
-            <col style={{ width: "360px" }} />
-            <col style={{ width: "150px" }} />
-            <col style={{ width: "130px" }} />
-            <col style={{ width: "130px" }} />
-            <col style={{ width: "135px" }} />
-            <col style={{ width: "130px" }} />
-            <col style={{ width: "130px" }} />
-            <col style={{ width: "140px" }} />
-            <col style={{ width: "190px" }} />
+            <col style={{ width: "320px" }} />
+            <col style={{ width: "120px" }} />
+            <col style={{ width: "110px" }} />
+            <col style={{ width: "110px" }} />
+            <col style={{ width: "120px" }} />
+            <col style={{ width: "110px" }} />
+            <col style={{ width: "115px" }} />
+            <col style={{ width: "120px" }} />
+            <col style={{ width: "145px" }} />
           </colgroup>
           <thead className="bg-zinc-800">
             <tr>
@@ -670,8 +759,15 @@ export default function Products() {
                       <div className="flex items-center gap-3">
                         {item.image ? (
                           <img
-                            src={imageUrl(item.image)}
+                            src={optimizedImageUrl(item.image, {
+                              width: 64,
+                              height: 64,
+                              crop: "fill",
+                              quality: "auto:low",
+                            })}
                             alt={item.name}
+                            loading="lazy"
+                            decoding="async"
                             className="w-10 h-10 rounded-lg object-cover"
                           />
                         ) : (
@@ -680,7 +776,7 @@ export default function Products() {
                           </div>
                         )}
 
-                        <div>
+                        <div className="min-w-0">
                           <p className="font-semibold">{item.name}</p>
                           <p className="product-description text-sm text-zinc-400">
                             {item.description || "-"}
@@ -740,20 +836,20 @@ export default function Products() {
                     </td>
 
                     <td className="p-4">
-                      <div className="flex min-w-[150px] flex-nowrap gap-2">
+                      <div className="flex min-w-0 flex-wrap gap-2">
                         <button
                           onClick={() => {
                             setEditData(item);
                             setEditImageFile(null);
                           }}
-                          className="rounded-lg bg-yellow-500 px-3 py-2 text-sm font-black text-black hover:bg-yellow-400"
+                          className="rounded-lg bg-yellow-500 px-2.5 py-2 text-xs font-black text-black hover:bg-yellow-400"
                         >
                           Edit
                         </button>
 
                         <button
                           onClick={() => setDeleteId(item.id)}
-                          className="rounded-lg bg-red-500 px-3 py-2 text-sm font-black hover:bg-red-400"
+                          className="rounded-lg bg-red-500 px-2.5 py-2 text-xs font-black hover:bg-red-400"
                         >
                           Hapus
                         </button>

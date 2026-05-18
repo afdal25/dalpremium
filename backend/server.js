@@ -4512,19 +4512,21 @@ app.delete(
 //get products
 app.get("/api/products", async (req, res) => {
   try {
-const products =
-  await prisma.product.findMany({
-    include: {
-      category: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+    const includeStock = req.query.stock !== "false";
+    const products = await prisma.product.findMany({
+      include: {
+        category: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-const productsWithStock = await buildProductsWithStock(products);
+    const responseProducts = includeStock
+      ? await buildProductsWithStock(products)
+      : products;
 
-res.json(productsWithStock);
+    res.json(responseProducts);
   } catch (error) {
     sendServerError(res, error);
   }
@@ -4568,6 +4570,36 @@ app.post(
       }
 
       const slug = createSlug(`${safeName} ${safeDuration || ""} ${safePlan || ""}`);
+      const existingProduct = await prisma.product.findFirst({
+        where: {
+          name: safeName,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+      const nextDescription =
+        cleanText(description, 1000) ||
+        existingProduct?.description ||
+        null;
+      const nextImage = req.file
+        ? await storeUploadedFile(
+            req.file,
+            "dalpremium/products"
+          )
+        : cleanUrl(image) || existingProduct?.image || null;
+      const parsedCategoryId = categoryId
+        ? Number(categoryId)
+        : existingProduct?.categoryId || null;
+
+      if (
+        parsedCategoryId !== null &&
+        !Number.isInteger(parsedCategoryId)
+      ) {
+        return res.status(400).json({
+          message: "Kategori produk tidak valid",
+        });
+      }
 
       const product =
         await prisma.product.create({
@@ -4577,15 +4609,10 @@ app.post(
             price: safePrice,
             duration: safeDuration,
             plan: safePlan,
-            description: cleanText(description, 1000) || null,
-            image: req.file
-              ? await storeUploadedFile(
-                  req.file,
-                  "dalpremium/products"
-                )
-              : cleanUrl(image),
+            description: nextDescription,
+            image: nextImage,
             deliveryType: safeDeliveryType,
-            categoryId: categoryId ? Number(categoryId) : null,
+            categoryId: parsedCategoryId,
           },
           include: {
             category: true,

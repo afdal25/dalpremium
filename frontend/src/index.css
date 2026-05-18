@@ -67,15 +67,16 @@ select option {
 
 .admin-theme .product-table {
   width: 100% !important;
-  min-width: 1495px !important;
+  min-width: 1270px !important;
   table-layout: fixed !important;
 }
 
 .admin-theme .product-table .product-description {
   display: -webkit-box;
-  max-width: 28rem;
+  max-width: 18rem;
   overflow: hidden;
   white-space: normal !important;
+  overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }

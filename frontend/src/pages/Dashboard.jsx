@@ -33,7 +33,7 @@ export default function Dashboard() {
 
       fetchDashboard();
 
-    }, 5000);
+    }, 30000);
 
   return () =>
     clearInterval(interval);
