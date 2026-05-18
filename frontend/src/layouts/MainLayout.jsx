@@ -210,7 +210,7 @@ export default function MainLayout({ children }) {
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
                 {notifications.length > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                  <span className="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-700 px-1 text-[11px] font-black leading-none text-white ring-2 ring-[#17130f]">
                     {notifications.length}
                   </span>
                 )}

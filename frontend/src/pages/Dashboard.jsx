@@ -5,6 +5,7 @@ import {
   useState,
 } from "react";
 import api from "../services/api";
+import useNearViewport from "../hooks/useNearViewport";
 
 const DashboardChart = lazy(() =>
   import("../components/DashboardChart")
@@ -12,6 +13,8 @@ const DashboardChart = lazy(() =>
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
+  const [showChart, setShowChart] = useState(false);
+  const [chartRef, chartNearViewport] = useNearViewport("250px");
 
   const [month, setMonth] = useState(
     new Date().getMonth() + 1
@@ -37,6 +40,23 @@ export default function Dashboard() {
 
 }, [month, year]);
 
+  useEffect(() => {
+    if (!data || !chartNearViewport) {
+      setShowChart(false);
+      return undefined;
+    }
+
+    const show = () => setShowChart(true);
+
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(show, { timeout: 1800 });
+      return () => window.cancelIdleCallback(id);
+    }
+
+    const timer = window.setTimeout(show, 1200);
+    return () => window.clearTimeout(timer);
+  }, [chartNearViewport, data]);
+
   const fetchDashboard = async () => {
     try {
       const response = await api.get("/dashboard", {
@@ -52,39 +72,84 @@ export default function Dashboard() {
     }
   };
 
+  const filters = (
+    <div className="mb-8 flex flex-wrap gap-3">
+      <label className="sr-only" htmlFor="dashboard-month">
+        Bulan dashboard
+      </label>
+      <select
+        id="dashboard-month"
+        aria-label="Bulan dashboard"
+        value={month}
+        onChange={(e) =>
+          setMonth(e.target.value)
+        }
+        className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3"
+      >
+        <option value="1">Januari</option>
+        <option value="2">Februari</option>
+        <option value="3">Maret</option>
+        <option value="4">April</option>
+        <option value="5">Mei</option>
+        <option value="6">Juni</option>
+        <option value="7">Juli</option>
+        <option value="8">Agustus</option>
+        <option value="9">September</option>
+        <option value="10">Oktober</option>
+        <option value="11">November</option>
+        <option value="12">Desember</option>
+      </select>
+
+      <label className="sr-only" htmlFor="dashboard-year">
+        Tahun dashboard
+      </label>
+      <input
+        id="dashboard-year"
+        aria-label="Tahun dashboard"
+        type="number"
+        value={year}
+        onChange={(e) =>
+          setYear(e.target.value)
+        }
+        className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 w-32"
+      />
+    </div>
+  );
+
   if (!data) {
   return (
-    <div className="space-y-6 animate-pulse">
-      <div className="h-10 w-60 bg-zinc-800 rounded-xl" />
+    <div className="min-w-0">
+      <h1 className="text-3xl font-bold mb-8">
+        Dashboard
+      </h1>
 
-      <div className="flex gap-4">
-        <div className="h-12 w-32 bg-zinc-900 border border-zinc-800 rounded-xl" />
-        <div className="h-12 w-32 bg-zinc-900 border border-zinc-800 rounded-xl" />
-      </div>
+      {filters}
 
-      <div className="grid grid-cols-3 gap-5">
-        {[1, 2, 3].map((item) => (
-          <div
-            key={item}
-            className="h-32 bg-zinc-900 border border-zinc-800 rounded-2xl"
-          />
-        ))}
-      </div>
+      <div className="space-y-6 animate-pulse">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((item) => (
+            <div
+              key={item}
+              className="h-32 bg-zinc-900 border border-zinc-800 rounded-2xl"
+            />
+          ))}
+        </div>
 
-      <div className="grid grid-cols-3 gap-5">
-        {[1, 2, 3].map((item) => (
-          <div
-            key={item}
-            className="h-32 bg-zinc-900 border border-zinc-800 rounded-2xl"
-          />
-        ))}
-      </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3].map((item) => (
+            <div
+              key={item}
+              className="h-32 bg-zinc-900 border border-zinc-800 rounded-2xl"
+            />
+          ))}
+        </div>
 
-      <div className="h-[400px] bg-zinc-900 border border-zinc-800 rounded-2xl" />
+        <div className="h-[400px] bg-zinc-900 border border-zinc-800 rounded-2xl" />
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="h-72 bg-zinc-900 border border-zinc-800 rounded-2xl" />
-        <div className="h-72 bg-zinc-900 border border-zinc-800 rounded-2xl" />
+        <div className="grid gap-6 xl:grid-cols-2">
+          <div className="h-72 bg-zinc-900 border border-zinc-800 rounded-2xl" />
+          <div className="h-72 bg-zinc-900 border border-zinc-800 rounded-2xl" />
+        </div>
       </div>
     </div>
   );
@@ -105,38 +170,7 @@ export default function Dashboard() {
         Dashboard
       </h1>
 
-      {/* Filter */}
-      <div className="mb-8 flex flex-wrap gap-3">
-        <select
-          value={month}
-          onChange={(e) =>
-            setMonth(e.target.value)
-          }
-          className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3"
-        >
-          <option value="1">Januari</option>
-          <option value="2">Februari</option>
-          <option value="3">Maret</option>
-          <option value="4">April</option>
-          <option value="5">Mei</option>
-          <option value="6">Juni</option>
-          <option value="7">Juli</option>
-          <option value="8">Agustus</option>
-          <option value="9">September</option>
-          <option value="10">Oktober</option>
-          <option value="11">November</option>
-          <option value="12">Desember</option>
-        </select>
-
-        <input
-          type="number"
-          value={year}
-          onChange={(e) =>
-            setYear(e.target.value)
-          }
-          className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 w-32"
-        />
-      </div>
+      {filters}
 
       {/* Cards */}
 <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -217,7 +251,10 @@ export default function Dashboard() {
       </div>
 
       {/* Chart */}
-      <div className="relative overflow-hidden bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl">
+      <div
+        ref={chartRef}
+        className="relative overflow-hidden bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl"
+      >
         <h2 className="text-2xl font-bold mb-6">
           Statistik Keuangan
         </h2>
@@ -228,7 +265,11 @@ export default function Dashboard() {
               <div className="h-full animate-pulse rounded-2xl bg-zinc-800/60" />
             }
           >
-            <DashboardChart data={chartData} />
+            {showChart ? (
+              <DashboardChart data={chartData} />
+            ) : (
+              <div className="h-full animate-pulse rounded-2xl bg-zinc-800/60" />
+            )}
           </Suspense>
         </div>
       </div>
