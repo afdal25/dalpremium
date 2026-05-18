@@ -250,6 +250,9 @@ export default function Checkout() {
 
   const primaryVariants = orderedVariants.slice(0, 3);
   const otherVariants = orderedVariants.slice(3);
+  const selectedPaymentMethod = paymentMethods.find(
+    (method) => String(method.id) === selectedPaymentMethodId
+  );
 
   const selectVariant = (product) => {
     setSelectedDuration(optionLabel(product.duration, "Standar"));
@@ -588,6 +591,76 @@ export default function Checkout() {
                   </p>
                 )}
               </div>
+
+              {selectedPaymentMethod && (
+                <div className="mt-5 rounded-xl border border-[#d5a756]/15 bg-black/25 p-5">
+                  {selectedPaymentMethod.qrisImage ? (
+                    <div>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm font-bold text-[#d5a756]">
+                            QRIS
+                          </p>
+                          <h3 className="mt-1 text-xl font-black">
+                            Scan QRIS untuk pembayaran
+                          </h3>
+                          <p className="mt-1 text-sm text-zinc-400">
+                            Pastikan nominal transfer sesuai total pesanan.
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-[#d5a756]/10 px-3 py-2 text-sm font-bold text-[#f0cf87]">
+                          {selectedPaymentMethod.accountName || selectedPaymentMethod.name}
+                        </div>
+                      </div>
+
+                      <img
+                        src={optimizedImageUrl(selectedPaymentMethod.qrisImage, {
+                          width: 640,
+                          crop: "limit",
+                          quality: "auto:eco",
+                        })}
+                        alt={`${selectedPaymentMethod.name} QRIS`}
+                        loading="lazy"
+                        decoding="async"
+                        className="mt-4 max-h-[420px] w-full rounded-xl border border-white/10 bg-white object-contain p-3"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-sm font-bold text-[#d5a756]">
+                        Rekening / E-Wallet
+                      </p>
+                      <h3 className="mt-1 text-xl font-black">
+                        {selectedPaymentMethod.name}
+                      </h3>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                          <p className="text-xs font-semibold text-zinc-400">
+                            Nomor tujuan
+                          </p>
+                          <p className="mt-1 break-all text-2xl font-black text-[#f0cf87]">
+                            {selectedPaymentMethod.accountNumber || "-"}
+                          </p>
+                        </div>
+                        <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                          <p className="text-xs font-semibold text-zinc-400">
+                            Atas nama
+                          </p>
+                          <p className="mt-1 break-words text-lg font-black">
+                            {selectedPaymentMethod.accountName || "-"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedPaymentMethod.instructions && (
+                    <p className="mt-4 rounded-lg border border-white/10 bg-black/30 p-4 text-sm leading-6 text-zinc-300">
+                      {selectedPaymentMethod.instructions}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-6">
