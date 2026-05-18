@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../services/api";
 import PublicTopBar from "../components/PublicTopBar";
-import PublicFooter from "../components/PublicFooter";
-import WhatsAppWidget from "../components/WhatsAppWidget";
-import { assetUrl as imageUrl } from "../utils/url";
+import { optimizedImageUrl } from "../utils/url";
+
+const PublicFooter = lazy(() => import("../components/PublicFooter"));
+const WhatsAppWidget = lazy(() =>
+  import("../components/WhatsAppWidget")
+);
 
 const slugify = (value = "") =>
   value
@@ -14,19 +17,82 @@ const slugify = (value = "") =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 
+const titleFromSlug = (value = "") =>
+  value
+    .split("-")
+    .filter(Boolean)
+    .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
+    .join(" ");
+
 const optionLabel = (value, fallback) =>
   value || fallback;
 
+const SHOP_CACHE_KEY = "dalpremiumShopPayload";
+const SHOP_CACHE_TTL = 1000 * 60 * 10;
+
+const getCachedCheckoutData = (slug) => {
+  try {
+    const cached = JSON.parse(localStorage.getItem(SHOP_CACHE_KEY));
+
+    if (!cached || Date.now() - cached.savedAt > SHOP_CACHE_TTL) {
+      return null;
+    }
+
+    const products = cached.payload?.products || [];
+    let selectedVariants = products.filter(
+      (item) => slugify(item.name) === slug
+    );
+
+    if (selectedVariants.length === 0) {
+      const selectedProduct = products.find((item) => item.slug === slug);
+
+      if (selectedProduct) {
+        selectedVariants = products.filter(
+          (item) => item.name === selectedProduct.name
+        );
+      }
+    }
+
+    return {
+      variants: selectedVariants,
+      settings: cached.payload?.content?.settings || null,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const getFirstAvailable = (items) =>
+  items.find((item) => item.stock > 0) || items[0];
+
 export default function Checkout() {
   const { slug } = useParams();
+  const fallbackTitle = titleFromSlug(slug);
+  const cachedCheckout = useMemo(
+    () => getCachedCheckoutData(slug),
+    [slug]
+  );
+  const cachedFirstAvailable = getFirstAvailable(
+    cachedCheckout?.variants || []
+  );
 
-  const [variants, setVariants] = useState([]);
+  const [variants, setVariants] = useState(
+    cachedCheckout?.variants || []
+  );
   const [selectedDuration, setSelectedDuration] =
-    useState("");
-  const [selectedPlan, setSelectedPlan] = useState("");
+    useState(
+      optionLabel(cachedFirstAvailable?.duration, "Standar")
+    );
+  const [selectedPlan, setSelectedPlan] = useState(
+    optionLabel(cachedFirstAvailable?.plan, "Standar")
+  );
   const [loading, setLoading] = useState(false);
-  const [variantsLoading, setVariantsLoading] = useState(true);
-  const [settings, setSettings] = useState(null);
+  const [variantsLoading, setVariantsLoading] = useState(
+    !cachedCheckout?.variants?.length
+  );
+  const [settings, setSettings] = useState(
+    cachedCheckout?.settings || null
+  );
 
   const [form, setForm] = useState(() => {
     try {
@@ -55,14 +121,28 @@ export default function Checkout() {
 
     const fetchVariants = async () => {
       try {
-        setVariantsLoading(true);
-        const [response, contentResponse] = await Promise.all([
-          api.get("/products"),
-          api.get("/content"),
-        ]);
-        const activeProducts = response.data.filter(
-          (item) => item.isActive
-        );
+        if (!cachedCheckout?.variants?.length) {
+          setVariantsLoading(true);
+        }
+
+        let activeProducts = [];
+        let nextSettings = null;
+
+        try {
+          const response = await api.get("/shop");
+          activeProducts = response.data.products || [];
+          nextSettings = response.data.content?.settings || null;
+        } catch {
+          const [response, contentResponse] = await Promise.all([
+            api.get("/products"),
+            api.get("/content"),
+          ]);
+
+          activeProducts = response.data.filter(
+            (item) => item.isActive
+          );
+          nextSettings = contentResponse.data.settings;
+        }
 
         let selectedVariants = activeProducts.filter(
           (item) => slugify(item.name) === slug
@@ -85,7 +165,7 @@ export default function Checkout() {
           selectedVariants[0];
 
         if (isMounted) {
-          setSettings(contentResponse.data.settings);
+          setSettings(nextSettings);
           setVariants(selectedVariants);
           setSelectedDuration(
             optionLabel(firstAvailable?.duration, "Standar")
@@ -95,7 +175,7 @@ export default function Checkout() {
           );
         }
       } catch {
-        if (isMounted) {
+        if (isMounted && !cachedCheckout?.variants?.length) {
           setVariants([]);
         }
       } finally {
@@ -110,7 +190,7 @@ export default function Checkout() {
     return () => {
       isMounted = false;
     };
-  }, [slug]);
+  }, [cachedCheckout, slug]);
 
   const durations = useMemo(() => {
     const values = variants.map((item) =>
@@ -227,13 +307,43 @@ export default function Checkout() {
     return (
       <div className="min-h-screen bg-[#0f0d0a] text-white">
         <PublicTopBar logo={settings?.logo} />
-        <main className="flex min-h-[60vh] items-center justify-center">
-          Memuat paket...
+        <main className="mx-auto grid min-h-[760px] max-w-6xl gap-6 px-4 py-8 sm:px-5 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+          <section className="rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-6 lg:p-8">
+            <div className="mb-8 h-5 w-28 animate-pulse rounded bg-[#d5a756]/15" />
+            <div className="mb-8 flex items-center gap-4">
+              <div className="h-16 w-16 animate-pulse rounded-lg bg-black/40" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[#d5a756]">
+                  Pilih Langganan
+                </p>
+                <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
+                  {fallbackTitle || "Paket Premium"}
+                </h1>
+              </div>
+            </div>
+            <div className="space-y-8">
+              {[1, 2, 3].map((item) => (
+                <div key={item}>
+                  <div className="mb-3 h-6 w-40 animate-pulse rounded bg-white/10" />
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {[1, 2, 3, 4].map((box) => (
+                      <div key={box} className="h-14 animate-pulse rounded-lg bg-black/30" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+          <aside className="h-fit min-h-80 rounded-2xl border border-[#d5a756]/15 bg-[#17130f] p-6">
+            <div className="mb-6 h-8 w-28 animate-pulse rounded bg-white/10" />
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((item) => (
+                <div key={item} className="h-5 animate-pulse rounded bg-white/10" />
+              ))}
+            </div>
+            <div className="mt-8 h-14 animate-pulse rounded-lg bg-[#d5a756]/30" />
+          </aside>
         </main>
-        <PublicFooter logo={settings?.logo} settings={settings} />
-        <WhatsAppWidget
-          phone={settings?.footerWhatsapp || settings?.waGatewaySender}
-        />
       </div>
     );
   }
@@ -245,10 +355,14 @@ export default function Checkout() {
         <main className="flex min-h-[60vh] items-center justify-center">
           Paket tidak ditemukan
         </main>
-        <PublicFooter logo={settings?.logo} settings={settings} />
-        <WhatsAppWidget
-          phone={settings?.footerWhatsapp || settings?.waGatewaySender}
-        />
+        <div className="min-h-72">
+          <Suspense fallback={null}>
+            <PublicFooter logo={settings?.logo} settings={settings} />
+            <WhatsAppWidget
+              phone={settings?.footerWhatsapp || settings?.waGatewaySender}
+            />
+          </Suspense>
+        </div>
       </div>
     );
   }
@@ -272,8 +386,17 @@ export default function Checkout() {
           <div className="mb-8 flex items-center gap-4">
             {service.image ? (
               <img
-                src={imageUrl(service.image)}
+                src={optimizedImageUrl(service.image, {
+                  width: 96,
+                  height: 96,
+                  crop: "fill",
+                  quality: "auto:low",
+                })}
                 alt={service.name}
+                loading="eager"
+                decoding="async"
+                width="64"
+                height="64"
                 className="h-16 w-16 rounded-lg object-cover"
               />
             ) : (
@@ -469,8 +592,12 @@ export default function Checkout() {
           </button>
         </aside>
       </main>
-      <PublicFooter logo={settings?.logo} settings={settings} />
-      <WhatsAppWidget phone={settings?.footerWhatsapp || settings?.waGatewaySender} />
+      <div className="min-h-72">
+        <Suspense fallback={null}>
+          <PublicFooter logo={settings?.logo} settings={settings} />
+          <WhatsAppWidget phone={settings?.footerWhatsapp || settings?.waGatewaySender} />
+        </Suspense>
+      </div>
     </div>
   );
 }
