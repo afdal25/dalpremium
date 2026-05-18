@@ -175,10 +175,12 @@ export default function Payment() {
             Pembayaran
           </p>
           <h1 className="mt-1 text-3xl font-black">
-            Pembayaran
+            {lockedMethodId ? "Upload Bukti Pembayaran" : "Pembayaran"}
           </h1>
           <p className="mt-2 text-zinc-400">
-            Transfer sesuai total, lalu upload bukti pembayaran.
+            {lockedMethodId
+              ? "Metode pembayaran sudah dipilih saat checkout. Transfer sesuai total, lalu upload bukti."
+              : "Transfer sesuai total, lalu upload bukti pembayaran."}
           </p>
 
           {showGatewayPayment && (
@@ -224,26 +226,54 @@ export default function Payment() {
             </div>
           )}
 
-          <div className="mt-6 grid gap-3">
-            {(lockedMethodId && activeMethod
-              ? [activeMethod]
-              : paymentMethods
-            ).map((method) => {
+          {lockedMethodId && activeMethod ? (
+            <div className="mt-6 rounded-xl border border-[#d5a756]/15 bg-black/20 p-5">
+              <p className="text-sm font-bold text-[#d5a756]">
+                Metode terpilih
+              </p>
+              <div className="mt-3 flex items-center gap-4">
+                <span className="flex h-14 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white text-lg font-black text-[#14100b]">
+                  {activeMethod.logo ? (
+                    <img
+                      src={imageUrl(activeMethod.logo)}
+                      alt={activeMethod.name}
+                      className="h-full w-full object-contain p-2"
+                    />
+                  ) : (
+                    activeMethod.name?.charAt(0)
+                  )}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xl font-black">
+                    {activeMethod.name}
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    a/n {activeMethod.accountName}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-4 text-3xl font-black text-[#f0cf87]">
+                {activeMethod.accountNumber}
+              </p>
+              {activeMethod.instructions && (
+                <p className="mt-3 text-sm leading-6 text-zinc-300">
+                  {activeMethod.instructions}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="mt-6 grid gap-3">
+              {paymentMethods.map((method) => {
               const active =
                 String(selectedMethodId) === String(method.id) ||
                 (!selectedMethodId &&
                   method.id === paymentMethods[0]?.id);
-              const CardTag = lockedMethodId ? "div" : "button";
 
               return (
-                <CardTag
-                  type={lockedMethodId ? undefined : "button"}
+                <button
+                  type="button"
                   key={method.id}
-                  onClick={
-                    lockedMethodId
-                      ? undefined
-                      : () => setSelectedMethodId(method.id)
-                  }
+                  onClick={() => setSelectedMethodId(method.id)}
                   className={`rounded-xl border p-5 text-left transition ${
                     active
                       ? "border-[#d5a756] bg-[#d5a756]/10"
@@ -277,10 +307,11 @@ export default function Payment() {
                       {method.instructions}
                     </p>
                   )}
-                </CardTag>
+                </button>
               );
-            })}
-          </div>
+              })}
+            </div>
+          )}
 
           {activeMethod?.qrisImage && (
             <div className="mt-6 rounded-xl border border-[#d5a756]/15 bg-black/20 p-5">
